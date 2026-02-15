@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import EnrichmentCard from '../components/EnrichmentCard';
 import { createEnrichmentRequest, getEnrichmentRequest, listEnrichmentRequests } from '../services/enrichmentService';
+import applicationService from '../services/applicationService';
+import { useNavigate } from 'react-router-dom';
 
 const Enrichment = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         nationalId: '',
         phone: '',
-        email: ''
+        email: '',
+        amountRequested: 500000,
+        termRequested: 24
     });
 
+    const [isLoanApp, setIsLoanApp] = useState(true);
+    const [applicationId, setApplicationId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [currentRequest, setCurrentRequest] = useState(null);
     const [history, setHistory] = useState([]);
@@ -59,20 +66,38 @@ const Enrichment = () => {
         setCurrentRequest(null);
 
         try {
-            // Create enrichment request
-            const response = await createEnrichmentRequest(formData);
+            let response;
+            if (isLoanApp) {
+                // Submit full loan application
+                response = await applicationService.submitApplication({
+                    ...formData,
+                    productTypeId: 1 // Default to Personal Loan
+                });
+                setApplicationId(response.applicationId);
 
-            // Start polling for results
-            setCurrentRequest({
-                id: response.enrichmentRequestId,
-                status: response.status,
-                results: []
-            });
+                // For visualization, we still poll the enrichment request
+                // The backend returns it in the application status, or we can assume ID match for now
+                // Actually, the application status endpoint is better
+                setCurrentRequest({
+                    id: response.applicationId, // Hack: using app ID as label
+                    status: response.status,
+                    results: []
+                });
+            } else {
+                // Just create enrichment request (Original behavior)
+                response = await createEnrichmentRequest(formData);
+                setCurrentRequest({
+                    id: response.enrichmentRequestId,
+                    status: response.status,
+                    results: []
+                });
+            }
+
             setPolling(true);
             fetchHistory(); // Refresh history listing immediately
 
         } catch (err) {
-            setError(err.response?.data?.error || 'Failed to create enrichment request');
+            setError(err.response?.data?.error || 'Failed to process request');
             setLoading(false);
         }
     };
@@ -127,62 +152,80 @@ const Enrichment = () => {
                         <h2 className="text-xl font-semibold mb-4">Request Enrichment Data</h2>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">
-                                        National ID / Passport
-                                    </label>
+                            <div className="flex items-center gap-4 mb-4 p-3 bg-blue-50 rounded-md border border-blue-100">
+                                <label className="flex items-center gap-2 cursor-pointer font-semibold text-blue-800">
                                     <input
-                                        type="text"
-                                        name="nationalId"
-                                        value={formData.nationalId}
-                                        onChange={handleInputChange}
-                                        required
+                                        type="checkbox"
+                                        checked={isLoanApp}
+                                        onChange={(e) => setIsLoanApp(e.target.checked)}
+                                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                                    />
+                                    Full Loan Application
+                                </label>
+                                <span className="text-xs text-blue-500 italic">Submit enrichment + Start 9-step journey</span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                <div className="lg:col-span-1">
+                                    <label className="block text-sm font-medium mb-1">National ID</label>
+                                    <input
+                                        type="text" name="nationalId" value={formData.nationalId}
+                                        onChange={handleInputChange} required disabled={loading}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         placeholder="AB1234567"
-                                        disabled={loading}
                                     />
                                 </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">
-                                        Phone Number
-                                    </label>
+                                <div className="lg:col-span-1">
+                                    <label className="block text-sm font-medium mb-1">Phone</label>
                                     <input
-                                        type="tel"
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleInputChange}
-                                        required
+                                        type="tel" name="phone" value={formData.phone}
+                                        onChange={handleInputChange} required disabled={loading}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         placeholder="+374XXXXXXXX"
-                                        disabled={loading}
+                                    />
+                                </div>
+                                <div className="lg:col-span-1">
+                                    <label className="block text-sm font-medium mb-1">Email</label>
+                                    <input
+                                        type="email" name="email" value={formData.email}
+                                        onChange={handleInputChange} required disabled={loading}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="applicant@example.com"
                                     />
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">
-                                        Email Address
-                                    </label>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        required
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="applicant@example.com"
-                                        disabled={loading}
-                                    />
-                                </div>
+                                {isLoanApp && (
+                                    <>
+                                        <div className="lg:col-span-1">
+                                            <label className="block text-sm font-medium mb-1">Amount</label>
+                                            <input
+                                                type="number" name="amountRequested" value={formData.amountRequested}
+                                                onChange={handleInputChange} required disabled={loading}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div className="lg:col-span-1">
+                                            <label className="block text-sm font-medium mb-1">Term (Mo)</label>
+                                            <select
+                                                name="termRequested" value={formData.termRequested}
+                                                onChange={handleInputChange} required disabled={loading}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                <option value="12">12 Months</option>
+                                                <option value="24">24 Months</option>
+                                                <option value="36">36 Months</option>
+                                            </select>
+                                        </div>
+                                    </>
+                                )}
                             </div>
 
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold"
+                                className="w-full md:w-auto px-8 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-bold shadow-lg shadow-blue-200"
                             >
-                                {loading && polling ? 'Processing...' : 'Start New Enrichment'}
+                                {loading && polling ? 'Processing Application...' : (isLoanApp ? 'Submit Loan Application' : 'Start Enrichment')}
                             </button>
                         </form>
 
@@ -209,6 +252,22 @@ const Enrichment = () => {
                                     )}
                                 </div>
                             </div>
+
+                            {/* View Application Journey Button */}
+                            {applicationId && (
+                                <div className="mb-8 p-6 bg-green-50 border-2 border-green-500 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-green-800">Application Scoring in Progress</h3>
+                                        <p className="text-green-700 text-sm">Once enrichment reaches 100%, your personalized loan offer will be ready.</p>
+                                    </div>
+                                    <button
+                                        onClick={() => navigate(`/applications?id=${applicationId}`)}
+                                        className="px-8 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition shadow-lg shadow-green-200 whitespace-nowrap"
+                                    >
+                                        View Application Journey →
+                                    </button>
+                                </div>
+                            )}
 
                             {/* Service Call Sequence */}
                             <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
