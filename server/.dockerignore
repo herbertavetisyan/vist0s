@@ -1,0 +1,7 @@
+node_modules
+npm-debug.log
+prisma/migrations
+.env
+.git
+.gitignore
+README.md

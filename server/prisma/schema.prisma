@@ -1,0 +1,261 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum RoleType {
+  ADMIN
+  CREDIT_OFFICER
+  RELATIONSHIP_MANAGER
+  APPROVER
+}
+
+enum PartnerType {
+  MOBILE_BANKING
+  WEB_PORTAL
+  AGENT
+}
+
+enum EntityType {
+  INDIVIDUAL
+  LEGAL_ENTITY
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  ENRICHING
+  OFFER_READY
+  OFFER_SELECTED
+  SIGNING
+  SIGNING_COMPLETE
+  OTP_VERIFIED
+  APPROVED
+  REJECTED
+  DISBURSED
+}
+
+enum Currency {
+  AMD
+  USD
+  EUR
+}
+
+enum LoanRole {
+  APPLICANT
+  CO_APPLICANT
+  GUARANTOR
+}
+
+
+// User & Auth
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String   // Hashed
+  name      String?
+  role      RoleType @default(CREDIT_OFFICER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  loansCreated LoanApplication[] @relation("CreatedBy")
+  logs         Log[]
+}
+
+model Partner {
+  id          Int         @id @default(autoincrement())
+  name        String      @unique
+  apiKey      String      @unique
+  type        PartnerType
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  
+  loans       LoanApplication[]
+}
+
+// Entity (Applicant/Guarantor)
+model Entity {
+  id             Int        @id @default(autoincrement())
+  nationalId     String     @unique // or Tax ID
+  type           EntityType
+  firstName      String
+  lastName       String
+  dateOfBirth    DateTime?
+  companyName    String?
+  address        String?
+  phoneNumber    String?
+  email          String?
+  
+  loanParticipants LoanParticipant[]
+}
+
+// Products
+model ProductType {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  currency    Currency @default(AMD)
+  minAmount   Decimal
+  maxAmount   Decimal
+  minTenure   Int      @default(12) // Months
+  maxTenure   Int      @default(60) // Months
+  interestRate Decimal
+  
+  loans          LoanApplication[]
+  allowedStages  ProductStage[]
+  allowedEntities ProductEntity[]
+}
+
+model ProductStage {
+  id            Int         @id @default(autoincrement())
+  productTypeId Int
+  productType   ProductType @relation(fields: [productTypeId], references: [id])
+  stageId       Int
+  stage         Stage       @relation(fields: [stageId], references: [id])
+  order         Int         // Order within this product's workflow
+  isRequired    Boolean     @default(true)
+ 
+  @@unique([productTypeId, stageId])
+}
+
+model ProductEntity {
+  id            Int         @id @default(autoincrement())
+  productTypeId Int
+  productType   ProductType @relation(fields: [productTypeId], references: [id])
+  entityType    EntityType
+  role          LoanRole    // Applicant, Co-Applicant, Guarantor
+  isRequired    Boolean     @default(false)
+  
+  @@unique([productTypeId, entityType, role])
+}
+
+// Workflow
+model Stage {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  
+  loans         LoanApplication[]
+  productStages ProductStage[]
+}
+
+// Loan Application
+model LoanApplication {
+  id            Int               @id @default(autoincrement())
+  amountRequested Decimal
+  termRequested Int
+  purpose       String?
+  currency      Currency          @default(AMD)
+  status        ApplicationStatus @default(DRAFT)
+  
+  // Scoring & Offer
+  approvedLimit Decimal?
+  approvedTerm  Int?
+  interestRate  Decimal?
+  
+  // Final Choice
+  selectedAmount Decimal?
+  selectedTerm   Int?
+  
+  // Security & Disbursement
+  otpHash        String?
+  otpExpiresAt   DateTime?
+  bankName       String?
+  accountNumber  String?
+  
+  productTypeId Int
+  productType   ProductType       @relation(fields: [productTypeId], references: [id])
+  
+  currentStageId Int?
+  currentStage   Stage?           @relation(fields: [currentStageId], references: [id])
+  
+  // Participants
+  participants  LoanParticipant[]
+  
+  // Enrichment Link
+  enrichmentRequestId Int?              @unique
+  enrichmentRequest   EnrichmentRequest? @relation(fields: [enrichmentRequestId], references: [id])
+  
+  // Originator
+  createdById   Int?
+  createdBy     User?             @relation("CreatedBy", fields: [createdById], references: [id])
+  
+  partnerId     Int?
+  partner       Partner?          @relation(fields: [partnerId], references: [id])
+  
+  logs          Log[]
+  
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model LoanParticipant {
+  id                Int             @id @default(autoincrement())
+  loanApplicationId Int
+  loanApplication   LoanApplication @relation(fields: [loanApplicationId], references: [id])
+  entityId          Int
+  entity            Entity          @relation(fields: [entityId], references: [id])
+  role              LoanRole
+  
+  @@unique([loanApplicationId, entityId, role])
+}
+
+// Audit Log
+model Log {
+  id                Int      @id @default(autoincrement())
+  action            String
+  details           String?
+  
+  userId            Int?
+  user              User?    @relation(fields: [userId], references: [id])
+  
+  loanApplicationId Int?
+  loanApplication   LoanApplication? @relation(fields: [loanApplicationId], references: [id])
+  
+  createdAt         DateTime @default(now())
+}
+
+// Enrichment Request Tracking
+model EnrichmentRequest {
+  id            Int                @id @default(autoincrement())
+  nationalId    String
+  phone         String
+  email         String
+  status        EnrichmentStatus   @default(PENDING)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  
+  results       EnrichmentResult[]
+  loanApplication LoanApplication?
+}
+
+enum EnrichmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+// Individual Service Results
+model EnrichmentResult {
+  id                  Int                @id @default(autoincrement())
+  enrichmentRequestId Int
+  enrichmentRequest   EnrichmentRequest  @relation(fields: [enrichmentRequestId], references: [id], onDelete: Cascade)
+  
+  serviceName         String             // norq, ekeng, acra, dms
+  status              String             // success, failed, timeout
+  requestedAt         DateTime           @default(now())
+  respondedAt         DateTime?
+  responseData        Json?              // Store the actual response
+  errorMessage        String?
+  sequenceOrder       Int                // 1=norq, 2=ekeng, 3=acra, 4=dms
+  
+  @@index([enrichmentRequestId])
+  @@index([serviceName])
+}

@@ -1,0 +1,24 @@
+services:
+  db:
+    ports:
+      - "5433:5432" # Changed from 5432 to avoid local conflicts if needed
+    environment:
+      POSTGRES_DB: vistos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+
+  server:
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/vistos?schema=public
+      - PORT=3000
+      - JWT_SECRET=dev_secret_key
+      - ENRICHMENT_MOCK_MODE=true
+
+  client:
+    build:
+      args:
+        - VITE_API_URL=http://localhost:3000/api
+    ports:
+      - "5173:80"

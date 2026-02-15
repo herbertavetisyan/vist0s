@@ -1,0 +1,24 @@
+services:
+  db:
+    restart: always
+    environment:
+      POSTGRES_DB: vist
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  server:
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/vist?schema=public
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET}
+      - ENRICHMENT_MOCK_MODE=false
+      - SUMSUB_APP_TOKEN=${SUMSUB_PRODUCTION_TOKEN}
+
+  client:
+    build:
+      args:
+        - VITE_API_URL=https://www.vist.am/api
+    restart: always
+    ports:
+      - "80:80"
