@@ -145,6 +145,39 @@ const options = {
                             example: 1250
                         }
                     }
+                },
+                LoanApplication: {
+                    type: 'object',
+                    properties: {
+                        id: { type: 'integer', example: 1 },
+                        amountRequested: { type: 'number', example: 500000 },
+                        termRequested: { type: 'integer', example: 24 },
+                        status: {
+                            type: 'string',
+                            enum: ['DRAFT', 'SUBMITTED', 'ENRICHING', 'OFFER_READY', 'OFFER_SELECTED', 'SIGNING', 'SIGNING_COMPLETE', 'OTP_VERIFIED', 'APPROVED', 'REJECTED', 'DISBURSED'],
+                            example: 'OFFER_READY'
+                        },
+                        approvedLimit: { type: 'number', example: 3400000 },
+                        approvedTerm: { type: 'integer', example: 36 },
+                        interestRate: { type: 'number', example: 12.5 },
+                        currency: { type: 'string', example: 'AMD' }
+                    }
+                },
+                LoanResponse: {
+                    type: 'object',
+                    properties: {
+                        applicationId: { type: 'integer', example: 1 },
+                        status: { type: 'string', example: 'ENRICHING' },
+                        message: { type: 'string', example: 'Application submitted successfully.' }
+                    }
+                },
+                SelectionRequest: {
+                    type: 'object',
+                    required: ['selectedAmount', 'selectedTerm'],
+                    properties: {
+                        selectedAmount: { type: 'number', example: 1000000 },
+                        selectedTerm: { type: 'integer', example: 12 }
+                    }
                 }
             }
         }

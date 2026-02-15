@@ -7,8 +7,39 @@ const documentService = require('../services/documentService');
 const otpService = require('../services/otpService');
 
 /**
- * 1. Application Submission
- * Creates a loan application and triggers asynchronous enrichment.
+ * @swagger
+ * tags:
+ *   name: Applications
+ *   description: Loan Application lifecycle management
+ */
+
+/**
+ * @swagger
+ * /api/applications:
+ *   post:
+ *     summary: Submit a new loan application
+ *     tags: [Applications]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [nationalId, phone, email, amountRequested, termRequested]
+ *             properties:
+ *               nationalId: { type: string, example: "AB1234567" }
+ *               phone: { type: string, example: "+37499123456" }
+ *               email: { type: string, example: "test@example.com" }
+ *               amountRequested: { type: number, example: 500000 }
+ *               termRequested: { type: integer, example: 24 }
+ *               productTypeId: { type: integer, example: 1 }
+ *     responses:
+ *       202:
+ *         description: Application submitted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoanResponse'
  */
 router.post('/', async (req, res) => {
     try {
@@ -64,8 +95,23 @@ router.post('/', async (req, res) => {
 });
 
 /**
- * 2. Get Offer
- * Retrieves the approved limit after scoring.
+ * @swagger
+ * /api/applications/{id}/offer:
+ *   get:
+ *     summary: Get loan offer/status
+ *     tags: [Applications]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Loan application details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoanApplication'
  */
 router.get('/:id/offer', async (req, res) => {
     const { id } = req.params;
@@ -94,8 +140,25 @@ router.get('/:id/offer', async (req, res) => {
 });
 
 /**
- * 3. Offer Selection
- * Client selects their final desired amount and term.
+ * @swagger
+ * /api/applications/{id}/selection:
+ *   post:
+ *     summary: Select loan offer
+ *     tags: [Applications]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SelectionRequest'
+ *     responses:
+ *       200:
+ *         description: Offer selected
  */
 router.post('/:id/selection', async (req, res) => {
     const { id } = req.params;
@@ -122,8 +185,29 @@ router.post('/:id/selection', async (req, res) => {
 });
 
 /**
- * 9. Disbursement Details
- * Collects final bank account info and finishes the process.
+ * @swagger
+ * /api/applications/{id}/disbursement:
+ *   post:
+ *     summary: finalize disbursement details
+ *     tags: [Applications]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [bankName, accountNumber]
+ *             properties:
+ *               bankName: { type: string, example: "AmeriaBank" }
+ *               accountNumber: { type: string, example: "AM1234567890" }
+ *     responses:
+ *       200:
+ *         description: Loan disbursed
  */
 router.post('/:id/disbursement', async (req, res) => {
     const { id } = req.params;
@@ -149,8 +233,22 @@ router.post('/:id/disbursement', async (req, res) => {
 });
 
 /**
- * 4. Get Agreement
- * Retrieves the generated loan agreement.
+ * @swagger
+ * /api/applications/{id}/agreement:
+ *   get:
+ *     summary: Get loan agreement PDF
+ *     tags: [Applications]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: PDF file
+ *         content:
+ *           application/pdf:
+ *             schema: { type: string, format: binary }
  */
 router.get('/:id/agreement', async (req, res) => {
     try {
@@ -177,8 +275,19 @@ router.get('/:id/agreement', async (req, res) => {
 });
 
 /**
- * 5. Sign Document
- * Marks the document as signed and transitions status.
+ * @swagger
+ * /api/applications/{id}/signing:
+ *   post:
+ *     summary: Sign loan agreement
+ *     tags: [Applications]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Document signed
  */
 router.post('/:id/signing', async (req, res) => {
     try {
@@ -205,8 +314,19 @@ router.post('/:id/signing', async (req, res) => {
 });
 
 /**
- * 6. OTP Request
- * Generates and sends an OTP for final verification.
+ * @swagger
+ * /api/applications/{id}/otp-request:
+ *   post:
+ *     summary: Request verification OTP
+ *     tags: [Applications]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: OTP sent
  */
 router.post('/:id/otp-request', async (req, res) => {
     try {
@@ -249,8 +369,28 @@ router.post('/:id/otp-request', async (req, res) => {
 });
 
 /**
- * 7. OTP Verification
- * Verifies the OTP and transitions status.
+ * @swagger
+ * /api/applications/{id}/otp-verify:
+ *   post:
+ *     summary: Verify OTP
+ *     tags: [Applications]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [code]
+ *             properties:
+ *               code: { type: string, example: "123456" }
+ *     responses:
+ *       200:
+ *         description: OTP verified
  */
 router.post('/:id/otp-verify', async (req, res) => {
     try {
