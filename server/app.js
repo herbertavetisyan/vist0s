@@ -25,12 +25,14 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
+const { verifyToken } = require('./middleware/auth');
+
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/enrichment', require('./routes/enrichment'));
-app.use('/api/partners', require('./routes/partner'));
-app.use('/api/applications', require('./routes/loans'));
-app.use('/api/documents', require('./routes/documents'));
-app.use('/api/config', require('./routes/config'));
+app.use('/api/enrichment', verifyToken, require('./routes/enrichment'));
+app.use('/api/partners', require('./routes/partner')); // Protected by API Key inside
+app.use('/api/applications', verifyToken, require('./routes/loans'));
+app.use('/api/documents', verifyToken, require('./routes/documents'));
+app.use('/api/config', verifyToken, require('./routes/config'));
 
 // Root handler
 app.get('/', (req, res) => {
