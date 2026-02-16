@@ -18,7 +18,7 @@ services:
   client:
     build:
       args:
-        - VITE_API_URL=https://www.vist.am/api
+        - VITE_API_URL=/api
     restart: always
     ports:
       - "80:80"
