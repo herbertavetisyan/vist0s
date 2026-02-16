@@ -9,7 +9,7 @@ echo "Deploying $SERVICE to $ENV..."
 # This script is intended to be run from CI/CD or locally if SSH keys are configured
 # For local use: ensure you have SSH access to the production server
 
-ssh root@89.167.61.188 << EOF
+ssh root@37.27.9.38 << EOF
   cd /opt/vist
   git pull origin main
   

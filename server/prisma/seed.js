@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 async function main() {
     // Seed Stages
     const stageNames = [
-        'Entities', 'Documents', 'Credit Bureau', 'Salary Source', 'Scoring', 'Manual Review', 'Approval', 'Disbursement'
+        'Entities', 'Documents', 'Credit Bureau', 'Salary Source', 'Scoring', 'Manual Review', 'Internal Signing', 'Approval', 'Disbursement'
     ];
 
     // Create Stages if not exist
@@ -28,7 +28,7 @@ async function main() {
             interestRate: 12.5,
             minTenure: 12,
             maxTenure: 60,
-            stages: ['Entities', 'Documents', 'Credit Bureau', 'Scoring', 'Manual Review', 'Approval', 'Disbursement'],
+            stages: ['Entities', 'Documents', 'Credit Bureau', 'Scoring', 'Manual Review', 'Internal Signing', 'Approval', 'Disbursement'],
             entities: [{ type: 'INDIVIDUAL', role: 'APPLICANT', required: true }]
         },
         {
@@ -39,7 +39,7 @@ async function main() {
             interestRate: 8.5,
             minTenure: 60,
             maxTenure: 240,
-            stages: ['Entities', 'Documents', 'Credit Bureau', 'Salary Source', 'Manual Review', 'Approval', 'Disbursement'],
+            stages: ['Entities', 'Documents', 'Credit Bureau', 'Salary Source', 'Manual Review', 'Internal Signing', 'Approval', 'Disbursement'],
             entities: [{ type: 'INDIVIDUAL', role: 'APPLICANT', required: true }, { type: 'INDIVIDUAL', role: 'CO_APPLICANT', required: false }]
         }
     ];

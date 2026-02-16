@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 const { executeEnrichment } = require('../services/enrichmentService');
 const documentService = require('../services/documentService');
 const otpService = require('../services/otpService');
+const workflowService = require('../services/workflowService');
 
 /**
  * @swagger
@@ -43,44 +44,8 @@ const otpService = require('../services/otpService');
  */
 router.post('/', async (req, res) => {
     try {
-        const { nationalId, phone, email, amountRequested, termRequested, productTypeId } = req.body;
-
-        // 1. Create or Find Entity
-        let entity = await prisma.entity.findUnique({ where: { nationalId } });
-        if (!entity) {
-            // In a real flow, we'd have more details here
-            entity = await prisma.entity.create({
-                data: { nationalId, firstName: 'Applicant', lastName: 'User', type: 'INDIVIDUAL', phoneNumber: phone, email }
-            });
-        }
-
-        // 2. Create Enrichment Request first to link it
-        const enrichmentRequest = await prisma.enrichmentRequest.create({
-            data: { nationalId, phone, email, status: 'PENDING' }
-        });
-
-        // 3. Create Loan Application
-        const loanApplication = await prisma.loanApplication.create({
-            data: {
-                amountRequested,
-                termRequested,
-                status: 'ENRICHING',
-                productTypeId: parseInt(productTypeId) || 1,
-                enrichmentRequestId: enrichmentRequest.id
-            }
-        });
-
-        // 4. Link Entity as Applicant
-        await prisma.loanParticipant.create({
-            data: {
-                loanApplicationId: loanApplication.id,
-                entityId: entity.id,
-                role: 'APPLICANT'
-            }
-        });
-
-        // 5. Start enrichment in background
-        executeEnrichment({ nationalId, phone, email }, prisma, enrichmentRequest.id);
+        const loanService = require('../services/loanService');
+        const loanApplication = await loanService.createApplication(req.body);
 
         res.status(202).json({
             applicationId: loanApplication.id,
@@ -116,18 +81,21 @@ router.post('/', async (req, res) => {
 router.get('/:id/offer', async (req, res) => {
     const { id } = req.params;
     const application = await prisma.loanApplication.findUnique({
-        where: { id: parseInt(id) }
+        where: { id: parseInt(id) },
+        include: {
+            productType: {
+                include: {
+                    allowedStages: {
+                        include: { stage: true },
+                        orderBy: { order: 'asc' }
+                    }
+                }
+            },
+            currentStage: true
+        }
     });
 
     if (!application) return res.status(404).json({ error: 'Application not found' });
-
-    if (application.status === 'ENRICHING') {
-        return res.json({ status: 'ENRICHING', message: 'Scoring is still in progress.' });
-    }
-
-    if (application.status === 'REJECTED') {
-        return res.json({ status: 'REJECTED', message: 'Application was not approved based on scoring.' });
-    }
 
     res.json({
         applicationId: application.id,
@@ -135,7 +103,13 @@ router.get('/:id/offer', async (req, res) => {
         approvedLimit: application.approvedLimit,
         approvedTerm: application.approvedTerm,
         interestRate: application.interestRate,
-        currency: application.currency
+        currency: application.currency,
+        currentStage: application.currentStage,
+        stages: application.productType.allowedStages.map(ps => ({
+            id: ps.stage.id,
+            name: ps.stage.name,
+            order: ps.order
+        }))
     });
 });
 
@@ -180,6 +154,8 @@ router.post('/:id/selection', async (req, res) => {
             status: 'OFFER_SELECTED'
         }
     });
+
+    await workflowService.transitionToNext(parseInt(id));
 
     res.json({ message: 'Offer selected successfully. Proceed to signing.', status: 'OFFER_SELECTED' });
 });
@@ -306,7 +282,9 @@ router.post('/:id/signing', async (req, res) => {
             data: { status: 'SIGNING_COMPLETE' }
         });
 
-        res.json({ message: 'Document signed successfully. Proceed to OTP verification.', status: 'SIGNING_COMPLETE' });
+        await workflowService.transitionToNext(parseInt(id));
+
+        res.json({ message: 'Document signed successfully. Proceed to next stage.', status: 'SIGNING_COMPLETE' });
     } catch (error) {
         console.error('Signing Error:', error);
         res.status(500).json({ error: 'Failed to sign document' });
@@ -414,10 +392,56 @@ router.post('/:id/otp-verify', async (req, res) => {
             data: { status: 'OTP_VERIFIED' }
         });
 
+        await workflowService.transitionToNext(parseInt(id));
+
         res.json({ message: 'OTP verified successfully. Please provide disbursement details.', status: 'OTP_VERIFIED' });
     } catch (error) {
         console.error('OTP Verification Error:', error);
         res.status(500).json({ error: 'Failed to verify OTP' });
+    }
+});
+
+/**
+ * @swagger
+ * /api/applications/{id}/approve:
+ *   post:
+ *     summary: Approve loan application (Manual Review)
+ *     tags: [Applications]
+ */
+router.post('/:id/approve', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const application = await prisma.loanApplication.findUnique({ where: { id: parseInt(id) } });
+
+        if (!application) return res.status(404).json({ error: 'Application not found' });
+        if (application.status !== 'MANUAL_REVIEW') {
+            return res.status(400).json({ error: 'Application not in manual review.' });
+        }
+
+        await workflowService.transitionToNext(parseInt(id));
+        res.json({ message: 'Application approved.', status: 'APPROVED' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to approve application' });
+    }
+});
+
+/**
+ * @swagger
+ * /api/applications/{id}/reject:
+ *   post:
+ *     summary: Reject loan application
+ *     tags: [Applications]
+ */
+router.post('/:id/reject', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await prisma.loanApplication.update({
+            where: { id: parseInt(id) },
+            data: { status: 'REJECTED' }
+        });
+        res.json({ message: 'Application rejected.', status: 'REJECTED' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to reject application' });
     }
 });
 

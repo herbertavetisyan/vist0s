@@ -154,7 +154,7 @@ const options = {
                         termRequested: { type: 'integer', example: 24 },
                         status: {
                             type: 'string',
-                            enum: ['DRAFT', 'SUBMITTED', 'ENRICHING', 'OFFER_READY', 'OFFER_SELECTED', 'SIGNING', 'SIGNING_COMPLETE', 'OTP_VERIFIED', 'APPROVED', 'REJECTED', 'DISBURSED'],
+                            enum: ['DRAFT', 'SUBMITTED', 'ENRICHING', 'OFFER_READY', 'OFFER_SELECTED', 'SIGNING', 'SIGNING_COMPLETE', 'MANUAL_REVIEW', 'OTP_VERIFIED', 'APPROVED', 'REJECTED', 'DISBURSED'],
                             example: 'OFFER_READY'
                         },
                         approvedLimit: { type: 'number', example: 3400000 },

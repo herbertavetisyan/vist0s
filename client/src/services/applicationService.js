@@ -64,6 +64,22 @@ const applicationService = {
     submitDisbursement: async (id, disbursementData) => {
         const response = await axios.post(`${API_URL}/applications/${id}/disbursement`, disbursementData);
         return response.data;
+    },
+
+    /**
+     * Approve application (Manual Review)
+     */
+    approveApplication: async (id) => {
+        const response = await axios.post(`${API_URL}/applications/${id}/approve`);
+        return response.data;
+    },
+
+    /**
+     * Reject application
+     */
+    rejectApplication: async (id) => {
+        const response = await axios.post(`${API_URL}/applications/${id}/reject`);
+        return response.data;
     }
 };
 

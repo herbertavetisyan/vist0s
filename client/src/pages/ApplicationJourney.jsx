@@ -53,6 +53,7 @@ const ApplicationJourney = () => {
     };
 
     const determineStep = (app) => {
+        // Map status to visual step/screen
         switch (app.status) {
             case 'ENRICHING':
                 setStep('SCORING');
@@ -64,7 +65,10 @@ const ApplicationJourney = () => {
                 setStep('SIGNING');
                 break;
             case 'SIGNING_COMPLETE':
-                setStep('OTP');
+                setStep('WAITING'); // Generic waiting state
+                break;
+            case 'MANUAL_REVIEW':
+                setStep('MANUAL_REVIEW');
                 break;
             case 'OTP_VERIFIED':
                 setStep('DISBURSEMENT');
@@ -141,6 +145,28 @@ const ApplicationJourney = () => {
         }
     };
 
+    const handleApprove = async () => {
+        setLoading(true);
+        try {
+            await applicationService.approveApplication(applicationId);
+            await fetchStatus();
+        } catch (err) {
+            setError('Failed to approve application.');
+            setLoading(false);
+        }
+    };
+
+    const handleReject = async () => {
+        setLoading(true);
+        try {
+            await applicationService.rejectApplication(applicationId);
+            await fetchStatus();
+        } catch (err) {
+            setError('Failed to reject application.');
+            setLoading(false);
+        }
+    };
+
     if (error) {
         return (
             <div className="max-w-4xl mx-auto mt-10 p-6 bg-red-50 border border-red-200 rounded-lg text-center">
@@ -166,17 +192,17 @@ const ApplicationJourney = () => {
             {/* Stepper Header */}
             <div className="flex justify-between mb-12 relative">
                 <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 -z-10 transform -translate-y-1/2"></div>
-                {['Scoring', 'Offer', 'Signing', 'Verification', 'Finish'].map((label, idx) => {
-                    const stepsMap = ['SCORING', 'OFFER', 'SIGNING', 'OTP', 'SUCCESS'];
-                    const currentIdx = stepsMap.indexOf(step === 'DISBURSEMENT' ? 'OTP' : step);
-                    const isActive = idx <= currentIdx;
+                {application?.stages?.map((stage, idx) => {
+                    const isActive = application.currentStage && application.currentStage.order >= stage.order;
+                    const isCompleted = application.currentStage && application.currentStage.order > stage.order;
+
                     return (
-                        <div key={label} className="flex flex-col items-center">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border-2 transition-colors ${isActive ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-300 text-gray-400'
+                        <div key={stage.id} className="flex flex-col items-center">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border-2 transition-colors ${isActive ? (isCompleted ? 'bg-green-500 border-green-500 text-white' : 'bg-blue-600 border-blue-600 text-white') : 'bg-white border-gray-300 text-gray-400'
                                 }`}>
-                                {idx + 1}
+                                {isCompleted ? '✓' : idx + 1}
                             </div>
-                            <span className={`mt-2 text-xs font-semibold ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>{label}</span>
+                            <span className={`mt-2 text-[10px] font-semibold uppercase tracking-tighter ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>{stage.name}</span>
                         </div>
                     );
                 })}
@@ -292,6 +318,50 @@ const ApplicationJourney = () => {
                             >
                                 {loading ? 'Signing...' : 'Click to Sign Digitally'}
                             </button>
+                        </div>
+                    </div>
+                )}
+
+                {step === 'WAITING' && (
+                    <div className="text-center">
+                        <div className="animate-pulse text-5xl mb-6">⏳</div>
+                        <h2 className="text-2xl font-bold mb-4">Processing Next Steps</h2>
+                        <p className="text-gray-500 mb-8 max-w-md mx-auto">
+                            We are preparing the next stage of your application. This should only take a moment.
+                        </p>
+                        <div className="flex justify-center">
+                            <button onClick={fetchStatus} className="text-blue-600 font-bold hover:underline">Refresh Status</button>
+                        </div>
+                    </div>
+                )}
+
+                {step === 'MANUAL_REVIEW' && (
+                    <div className="text-center">
+                        <div className="text-5xl mb-6">🔍</div>
+                        <h2 className="text-2xl font-bold mb-4">Under Manual Review</h2>
+                        <p className="text-gray-500 mb-8 max-w-md mx-auto">
+                            Your application requires a manual check by our credit officers.
+                            We will notify you once the review is complete.
+                        </p>
+                        <div className="p-6 bg-blue-50 rounded-xl border border-blue-100 mb-8">
+                            <h3 className="font-bold text-blue-800 mb-2">Simulated Back-Office Action</h3>
+                            <p className="text-sm text-blue-600 mb-4">In a real app, this would be done by an admin. For this demo, you can act as the officer:</p>
+                            <div className="flex gap-4 justify-center">
+                                <button
+                                    onClick={handleApprove}
+                                    disabled={loading}
+                                    className="px-6 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-700"
+                                >
+                                    Approve Application
+                                </button>
+                                <button
+                                    onClick={handleReject}
+                                    disabled={loading}
+                                    className="px-6 py-2 bg-red-600 text-white rounded font-bold hover:bg-red-700"
+                                >
+                                    Reject Application
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

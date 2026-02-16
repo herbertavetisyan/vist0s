@@ -1,4 +1,5 @@
 const axios = require('axios');
+const workflowService = require('./workflowService');
 
 /**
  * Enrichment Service
@@ -306,6 +307,9 @@ async function executeEnrichment(params, prisma, enrichmentRequestId) {
                         interestRate: scoringResult.interestRate
                     }
                 });
+
+                // Transition to Scoring stage (Sets status to OFFER_READY)
+                await workflowService.transitionToNext(applicationId);
             }
         }
     }
