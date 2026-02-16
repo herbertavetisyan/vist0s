@@ -30,7 +30,6 @@ app.use('/api/enrichment', require('./routes/enrichment'));
 app.use('/api/partners', require('./routes/partner'));
 app.use('/api/applications', require('./routes/loans'));
 app.use('/api/documents', require('./routes/documents'));
-app.use('/api/otp', require('./routes/otp'));
 app.use('/api/config', require('./routes/config'));
 
 // Root handler
