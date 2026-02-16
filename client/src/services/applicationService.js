@@ -1,13 +1,11 @@
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import api from './api';
 
 const applicationService = {
     /**
      * Submit a new loan application
      */
     submitApplication: async (data) => {
-        const response = await axios.post(`${API_URL}/applications`, data);
+        const response = await api.post('/applications', data);
         return response.data;
     },
 
@@ -15,7 +13,7 @@ const applicationService = {
      * Get loan application status and offer details
      */
     getApplicationStatus: async (id) => {
-        const response = await axios.get(`${API_URL}/applications/${id}/offer`);
+        const response = await api.get(`/applications/${id}/offer`);
         return response.data;
     },
 
@@ -23,22 +21,22 @@ const applicationService = {
      * Select a loan offer
      */
     selectOffer: async (id, selection) => {
-        const response = await axios.post(`${API_URL}/applications/${id}/selection`, selection);
+        const response = await api.post(`/applications/${id}/selection`, selection);
         return response.data;
     },
 
     /**
-     * Get loan agreement PDF URL
+     * Get loan agreement PDF URL (Note: This might need token handling in browser if opened directly)
      */
     getAgreementUrl: (id) => {
-        return `${API_URL}/applications/${id}/agreement`;
+        return `${api.defaults.baseURL}/applications/${id}/agreement`;
     },
 
     /**
      * Sign the loan agreement
      */
     signDocument: async (id) => {
-        const response = await axios.post(`${API_URL}/applications/${id}/signing`);
+        const response = await api.post(`/applications/${id}/signing`);
         return response.data;
     },
 
@@ -46,7 +44,7 @@ const applicationService = {
      * Request verification OTP
      */
     requestOTP: async (id) => {
-        const response = await axios.post(`${API_URL}/applications/${id}/otp-request`);
+        const response = await api.post(`/applications/${id}/otp-request`);
         return response.data;
     },
 
@@ -54,7 +52,7 @@ const applicationService = {
      * Verify OTP
      */
     verifyOTP: async (id, code) => {
-        const response = await axios.post(`${API_URL}/applications/${id}/otp-verify`, { code });
+        const response = await api.post(`/applications/${id}/otp-verify`, { code });
         return response.data;
     },
 
@@ -62,7 +60,7 @@ const applicationService = {
      * Submit final disbursement details
      */
     submitDisbursement: async (id, disbursementData) => {
-        const response = await axios.post(`${API_URL}/applications/${id}/disbursement`, disbursementData);
+        const response = await api.post(`/applications/${id}/disbursement`, disbursementData);
         return response.data;
     },
 
@@ -70,7 +68,7 @@ const applicationService = {
      * List all applications
      */
     listApplications: async () => {
-        const response = await axios.get(`${API_URL}/applications`);
+        const response = await api.get('/applications');
         return response.data;
     },
 
@@ -78,7 +76,7 @@ const applicationService = {
      * Approve application (Manual Review)
      */
     approveApplication: async (id) => {
-        const response = await axios.post(`${API_URL}/applications/${id}/approve`);
+        const response = await api.post(`/applications/${id}/approve`);
         return response.data;
     },
 
@@ -86,7 +84,7 @@ const applicationService = {
      * Reject application
      */
     rejectApplication: async (id) => {
-        const response = await axios.post(`${API_URL}/applications/${id}/reject`);
+        const response = await api.post(`/applications/${id}/reject`);
         return response.data;
     }
 };

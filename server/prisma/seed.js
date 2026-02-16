@@ -99,14 +99,29 @@ async function main() {
         }
     }
 
-    // Seed Admin User
+    // Seed Admin Users
+    const bcrypt = require('bcryptjs');
+    const hashedHeboPassword = await bcrypt.hash('1111', 10);
+    const hashedAdminPassword = await bcrypt.hash('admin123', 10);
+
+    const hebo = await prisma.user.upsert({
+        where: { email: 'hebo@mail.com' },
+        update: { password: hashedHeboPassword },
+        create: {
+            email: 'hebo@mail.com',
+            name: 'Hebo',
+            password: hashedHeboPassword,
+            role: 'ADMIN',
+        },
+    });
+
     const admin = await prisma.user.upsert({
         where: { email: 'admin@vistos.com' },
-        update: {},
+        update: { password: hashedAdminPassword },
         create: {
             email: 'admin@vistos.com',
             name: 'Sim Admin',
-            password: 'hashed_password_here',
+            password: hashedAdminPassword,
             role: 'ADMIN',
         },
     });

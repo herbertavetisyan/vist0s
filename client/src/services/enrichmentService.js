@@ -1,12 +1,10 @@
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import api from './api';
 
 /**
  * Create a new enrichment request
  */
 export const createEnrichmentRequest = async (data) => {
-    const response = await axios.post(`${API_BASE_URL}/enrichment`, data);
+    const response = await api.post('/enrichment', data);
     return response.data;
 };
 
@@ -14,7 +12,7 @@ export const createEnrichmentRequest = async (data) => {
  * Get enrichment request status and results
  */
 export const getEnrichmentRequest = async (id) => {
-    const response = await axios.get(`${API_BASE_URL}/enrichment/${id}`);
+    const response = await api.get(`/enrichment/${id}`);
     return response.data;
 };
 
@@ -23,7 +21,7 @@ export const getEnrichmentRequest = async (id) => {
  */
 export const listEnrichmentRequests = async (params = {}) => {
     const { limit = 50, offset = 0 } = params;
-    const response = await axios.get(`${API_BASE_URL}/enrichment`, {
+    const response = await api.get('/enrichment', {
         params: { limit, offset }
     });
     return response.data;

@@ -1,8 +1,11 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { LayoutDashboard, FileText, Users, Settings, LogOut, Briefcase, Database } from 'lucide-react';
 
 const Sidebar = () => {
+    const { logout, user } = useAuth();
+
     const navItems = [
         { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
         { icon: FileText, label: 'Applications', to: '/applications' },
@@ -17,6 +20,7 @@ const Sidebar = () => {
             <div className="p-6 border-b border-gray-800">
                 <h1 className="text-2xl font-bold text-blue-500">VistOs</h1>
                 <p className="text-sm text-gray-400">Loan Origination</p>
+                {user && <p className="text-[10px] text-gray-500 mt-2 truncate uppercase tracking-tighter font-bold">{user.email}</p>}
             </div>
 
             <nav className="flex-1 p-4 space-y-2">
@@ -38,7 +42,10 @@ const Sidebar = () => {
             </nav>
 
             <div className="p-4 border-t border-gray-800">
-                <button className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg w-full transition-colors">
+                <button
+                    onClick={logout}
+                    className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg w-full transition-colors"
+                >
                     <LogOut size={20} />
                     <span>Logout</span>
                 </button>
