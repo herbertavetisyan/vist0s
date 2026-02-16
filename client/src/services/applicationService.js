@@ -67,6 +67,14 @@ const applicationService = {
     },
 
     /**
+     * List all applications
+     */
+    listApplications: async () => {
+        const response = await axios.get(`${API_URL}/applications`);
+        return response.data;
+    },
+
+    /**
      * Approve application (Manual Review)
      */
     approveApplication: async (id) => {

@@ -42,6 +42,32 @@ const workflowService = require('../services/workflowService');
  *             schema:
  *               $ref: '#/components/schemas/LoanResponse'
  */
+/**
+ * @swagger
+ * /api/applications:
+ *   get:
+ *     summary: List all loan applications
+ *     tags: [Applications]
+ *     responses:
+ *       200:
+ *         description: List of applications
+ */
+router.get('/', async (req, res) => {
+    try {
+        const applications = await prisma.loanApplication.findMany({
+            include: {
+                productType: true,
+                currentStage: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(applications);
+    } catch (error) {
+        console.error('List Applications Error:', error);
+        res.status(500).json({ error: 'Failed to list applications' });
+    }
+});
+
 router.post('/', async (req, res) => {
     try {
         const loanService = require('../services/loanService');
