@@ -93,6 +93,10 @@ model Entity {
   address        String?
   phoneNumber    String?
   email          String?
+  firstNameNonLatin String?
+  lastNameNonLatin  String?
+  gender         String?
+  kycData        Json?
   
   loanParticipants LoanParticipant[]
 }
@@ -155,6 +159,8 @@ model LoanApplication {
   purpose       String?
   currency      Currency          @default(AMD)
   status        ApplicationStatus @default(DRAFT)
+  externalId    String?           @unique
+  applicationData Json?
   
   // Scoring & Offer
   approvedLimit Decimal?

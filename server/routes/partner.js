@@ -38,6 +38,7 @@ router.post('/applications', verifyApiKey, async (req, res) => {
             message: 'Partner application received'
         });
     } catch (error) {
+        console.error('Partner Application Error:', error);
         res.status(500).json({ error: 'Failed to process partner application' });
     }
 });
