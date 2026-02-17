@@ -33,6 +33,7 @@ app.use('/api/partners', require('./routes/partner')); // Protected by API Key i
 app.use('/api/applications', verifyToken, require('./routes/loans'));
 app.use('/api/documents', verifyToken, require('./routes/documents'));
 app.use('/api/config', verifyToken, require('./routes/config'));
+app.use('/api/admin/partners', verifyToken, require('./routes/partners'));
 
 // Root handler
 app.get('/', (req, res) => {

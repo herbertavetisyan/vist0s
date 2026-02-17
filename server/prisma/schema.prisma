@@ -71,10 +71,12 @@ model User {
 model Partner {
   id          Int         @id @default(autoincrement())
   name        String      @unique
+  appId       String      @unique @default(uuid())
   apiKey      String      @unique
-  type        PartnerType
+  type        PartnerType @default(AGENT)
   isActive    Boolean     @default(true)
   createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   
   loans       LoanApplication[]
 }
