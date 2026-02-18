@@ -13,7 +13,6 @@ class LoanService {
     async createApplication(data, partnerId = null) {
         // Detect payload type
         const isPartnerPayload = !!data.loanRequest;
-        console.log('LoanService: Processing application. Partner payload?', isPartnerPayload);
 
         let processedData = {};
 
@@ -21,28 +20,45 @@ class LoanService {
             // Map Partner Payload
             const { applicationId, loanRequest, applicant, kyc, questionnaire } = data;
 
-            // Map product type (Mock logic for now)
-            let productTypeId = 1; // Default
+            // Extract verified data from KYC if applicant fields are empty
+            const idVer = kyc?.data?.id_verifications?.[0] || {};
+            const extraFields = idVer.extra_fields || {};
+
+            const fName = applicant.firstName || idVer.first_name || 'Unknown';
+            const lName = applicant.lastName || idVer.last_name || 'Unknown';
+            const fNameNonLatin = applicant.firstNameNonLatin || extraFields.first_name_non_latin || '';
+            const lNameNonLatin = applicant.lastNameNonLatin || extraFields.last_name_non_latin || '';
+            const bDateStr = applicant.birthDate || idVer.date_of_birth;
+            const genderValue = applicant.gender || idVer.gender;
+
+            // Map product type (PERSONAL -> 1 (Personal Loan), MORTGAGE -> 2 (Mortgage))
+            let productTypeId = 1;
             if (loanRequest.type === 'MORTGAGE') productTypeId = 2;
 
             processedData = {
                 externalId: applicationId,
                 amountRequested: loanRequest.amount,
-                currency: loanRequest.currency,
+                currency: loanRequest.currency || 'AMD',
                 termRequested: loanRequest.term,
                 productTypeId: productTypeId,
                 nationalId: applicant.ssn, // Mapping SSN to National ID
                 phone: applicant.mobileNumber,
                 email: applicant.email,
-                firstName: applicant.firstName,
-                lastName: applicant.lastName,
-                firstNameNonLatin: applicant.firstNameNonLatin,
-                lastNameNonLatin: applicant.lastNameNonLatin,
-                dateOfBirth: new Date(applicant.birthDate), // Parse date string
-                gender: applicant.gender,
+                firstName: fName,
+                lastName: lName,
+                firstNameNonLatin: fNameNonLatin,
+                lastNameNonLatin: lNameNonLatin,
+                dateOfBirth: bDateStr ? new Date(bDateStr) : null,
+                gender: genderValue,
                 kycData: kyc, // Store full KYC object
                 applicationData: questionnaire // Store full questionnaire
             };
+
+            // Validate Date if provided
+            if (processedData.dateOfBirth && isNaN(processedData.dateOfBirth.getTime())) {
+                console.warn(`[LoanService] Invalid birthDate format: ${bDateStr}`);
+                processedData.dateOfBirth = null;
+            }
         } else {
             // Internal Payload (keep existing logic)
             processedData = {
@@ -59,14 +75,11 @@ class LoanService {
 
         // Perform Transaction
         return await prisma.$transaction(async (tx) => {
-            console.log('LoanService: Starting transaction for', nationalId);
 
             // 1. Create or Find Entity
             let entity = await tx.entity.findUnique({ where: { nationalId } });
-            console.log('LoanService: Entity found?', !!entity);
 
             if (entity) {
-                console.log('LoanService: Updating entity...');
                 entity = await tx.entity.update({
                     where: { id: entity.id },
                     data: {
@@ -82,7 +95,6 @@ class LoanService {
                     }
                 });
             } else {
-                console.log('LoanService: Creating entity...');
                 entity = await tx.entity.create({
                     data: {
                         nationalId,
@@ -99,17 +111,13 @@ class LoanService {
                     }
                 });
             }
-            console.log('LoanService: Entity processed:', entity.id);
 
             // 2. Create Enrichment Request
-            console.log('LoanService: Creating enrichment request...');
             const enrichmentRequest = await tx.enrichmentRequest.create({
                 data: { nationalId, phone, email, status: 'PENDING' }
             });
-            console.log('LoanService: Enrichment req created:', enrichmentRequest.id);
 
             // 3. Create Loan Application
-            console.log('LoanService: Creating loan application...');
             const loanApplication = await tx.loanApplication.create({
                 data: {
                     amountRequested,
@@ -123,10 +131,8 @@ class LoanService {
                     currency: processedData.currency
                 }
             });
-            console.log('LoanService: Loan application created:', loanApplication.id);
 
             // 4. Link Entity as Applicant
-            console.log('LoanService: Linking applicant...');
             await tx.loanParticipant.create({
                 data: {
                     loanApplicationId: loanApplication.id,

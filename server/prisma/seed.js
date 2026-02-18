@@ -4,16 +4,23 @@ const prisma = new PrismaClient();
 async function main() {
     // Seed Stages
     const stageNames = [
-        'Entities', 'Documents', 'Credit Bureau', 'Salary Source', 'Scoring', 'Manual Review', 'Internal Signing', 'Approval', 'Disbursement'
+        'Entities', 'ID Verification', 'Income Verification', 'Credit Bureau', 'Scoring', 'Contracts', 'Disbursement'
     ];
 
     // Create Stages if not exist
     const stagesMap = {};
     for (const [index, name] of stageNames.entries()) {
+        let description = `${name} stage`;
+        if (name === 'ID Verification') description = 'ID verification (EKENG)';
+        if (name === 'Income Verification') description = 'Income Verification (NORQ)';
+        if (name === 'Credit Bureau') description = 'Credit Bureau (ACRA)';
+        if (name === 'Scoring') description = 'Scoring (DMS)';
+        if (name === 'Disbursement') description = 'Disbursement (Armsoft)';
+
         const stage = await prisma.stage.upsert({
             where: { name },
-            update: {},
-            create: { name, description: `${name} stage` },
+            update: { description },
+            create: { name, description },
         });
         stagesMap[name] = stage;
     }
@@ -28,7 +35,7 @@ async function main() {
             interestRate: 12.5,
             minTenure: 12,
             maxTenure: 60,
-            stages: ['Entities', 'Documents', 'Credit Bureau', 'Scoring', 'Manual Review', 'Internal Signing', 'Approval', 'Disbursement'],
+            stages: ['Entities', 'ID Verification', 'Income Verification', 'Credit Bureau', 'Scoring', 'Contracts', 'Disbursement'],
             entities: [{ type: 'INDIVIDUAL', role: 'APPLICANT', required: true }]
         },
         {
@@ -39,7 +46,7 @@ async function main() {
             interestRate: 8.5,
             minTenure: 60,
             maxTenure: 240,
-            stages: ['Entities', 'Documents', 'Credit Bureau', 'Salary Source', 'Manual Review', 'Internal Signing', 'Approval', 'Disbursement'],
+            stages: ['Entities', 'ID Verification', 'Income Verification', 'Credit Bureau', 'Scoring', 'Contracts', 'Disbursement'],
             entities: [{ type: 'INDIVIDUAL', role: 'APPLICANT', required: true }, { type: 'INDIVIDUAL', role: 'CO_APPLICANT', required: false }]
         }
     ];

@@ -11,18 +11,19 @@ class DocumentService {
      * @returns {Promise<Buffer>} Mock PDF buffer
      */
     async generateAgreement(application, docType) {
-        console.log(`[Document Service] 📄 Generating ${docType} for Application #${application.id}...`);
+        const docName = docType === 'payment-schedule' ? 'PAYMENT SCHEDULE' : 'LOAN AGREEMENT';
+        console.log(`[Document Service] 📄 Generating ${docName} for Application #${application.id}...`);
 
-        // In a real application, we'd use 'pdfkit' or 'puppeteer'
-        // For now, we return a mock string as buffer
         const content = `
-            LOAN AGREEMENT - ${docType.toUpperCase()}
+            ${docName}
             Application ID: ${application.id}
             Amount: ${application.selectedAmount} ${application.currency}
             Term: ${application.selectedTerm} months
             Interest Rate: ${application.interestRate}%
             
-            This is a legally binding document generated for digital signing.
+            This is one of the 2 legal contracts (Loan Agreement & Payment Schedule) 
+            required for the Personal Loan process.
+            Generated for digital signing.
             Timestamp: ${new Date().toISOString()}
         `;
 

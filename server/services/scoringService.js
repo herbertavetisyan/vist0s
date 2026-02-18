@@ -13,10 +13,10 @@ class ScoringService {
     async calculateOffer(enrichmentData, requestedParams) {
         console.log('[Scoring] Calculating offer based on enrichment data...');
 
-        // 1. Extract key metrics
-        const creditScore = enrichmentData.norq?.creditScore || 0;
-        const monthlySalary = enrichmentData.ekeng?.salary?.amount || 0;
-        const riskLevel = enrichmentData.norq?.riskLevel || 'HIGH';
+        // 1. Extract key metrics (Mapping updated to match Armenian registries: NORQ=Income, ACRA=Credit)
+        const creditScore = enrichmentData.acra?.creditScore || 0;
+        const monthlySalary = enrichmentData.norq?.salary?.amount || 0;
+        const riskLevel = enrichmentData.acra?.riskLevel || 'HIGH';
 
         // 2. Basic eligibility check
         if (creditScore < 500 || monthlySalary < 100000) {

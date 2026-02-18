@@ -85,8 +85,8 @@ const Dashboard = () => {
                                         <td className="px-6 py-4 font-bold">{Number(app.amountRequested).toLocaleString()} {app.currency}</td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${app.status === 'DISBURSED' ? 'bg-green-100 text-green-700' :
-                                                    app.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                                                        'bg-blue-100 text-blue-700'
+                                                app.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                                    'bg-blue-100 text-blue-700'
                                                 }`}>
                                                 {getStatusIcon(app.status)}
                                                 {app.status}
@@ -96,7 +96,7 @@ const Dashboard = () => {
                                         <td className="px-6 py-4 text-sm text-gray-400">{new Date(app.createdAt).toLocaleDateString()}</td>
                                         <td className="px-6 py-4 text-right">
                                             <button
-                                                onClick={() => navigate(`/applications?id=${app.id}`)}
+                                                onClick={() => navigate(`/applications/journey?id=${app.id}`)}
                                                 className="text-blue-600 font-bold hover:text-blue-800 text-sm"
                                             >
                                                 Open Journey

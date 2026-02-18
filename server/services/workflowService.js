@@ -14,13 +14,11 @@ class WorkflowService {
     mapStageToStatus(stageName) {
         const mapping = {
             'Entities': 'ENRICHING',
-            'Documents': 'ENRICHING',
+            'ID Verification': 'ENRICHING',
+            'Income Verification': 'ENRICHING',
             'Credit Bureau': 'ENRICHING',
-            'Salary Source': 'ENRICHING',
             'Scoring': 'OFFER_READY',
-            'Manual Review': 'MANUAL_REVIEW',
-            'Internal Signing': 'SIGNING',
-            'Approval': 'APPROVED',
+            'Contracts': 'OFFER_SELECTED',
             'Disbursement': 'DISBURSED'
         };
         return mapping[stageName] || 'SUBMITTED';

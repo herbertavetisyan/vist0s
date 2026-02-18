@@ -20,10 +20,10 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Deploy Service via SSH
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USERNAME }}
+          host: ${{ vars.PROD_HOST }}
+          username: ${{ vars.PROD_USERNAME }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
             cd /opt/vist

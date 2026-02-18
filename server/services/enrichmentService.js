@@ -8,17 +8,17 @@ const workflowService = require('./workflowService');
 
 // Service configurations (will be loaded from environment variables)
 const SERVICES = {
-    NORQ: {
-        name: 'norq',
-        url: process.env.NORQ_API_URL || 'https://api.norq.example.com',
-        apiKey: process.env.NORQ_API_KEY || 'mock_norq_key',
-        timeout: 10000,
-        sequenceOrder: 1
-    },
     EKENG: {
         name: 'ekeng',
         url: process.env.EKENG_API_URL || 'https://api.ekeng.example.com',
         apiKey: process.env.EKENG_API_KEY || 'mock_ekeng_key',
+        timeout: 10000,
+        sequenceOrder: 1
+    },
+    NORQ: {
+        name: 'norq',
+        url: process.env.NORQ_API_URL || 'https://api.norq.example.com',
+        apiKey: process.env.NORQ_API_KEY || 'mock_norq_key',
         timeout: 10000,
         sequenceOrder: 2
     },
@@ -67,7 +67,16 @@ async function callService(serviceName, params, previousResponses = null) {
             email: params.email
         };
 
-        // For DMS, include previous responses
+        // For ACRA, include verified identity data from EKENG if available
+        if (serviceName.toUpperCase() === 'ACRA' && previousResponses?.ekeng) {
+            const privateData = previousResponses.ekeng.argPrivateData;
+            payload.passportNumber = privateData.Passport || privateData.IdCard;
+            payload.firstName = privateData.Firstname;
+            payload.lastName = privateData.Lastname;
+            console.log(`[Enrichment] ACRA Request with verified identity:`, payload.passportNumber);
+        }
+
+        // For DMS, include all previous responses
         if (serviceName.toUpperCase() === 'DMS' && previousResponses) {
             payload.enrichmentData = previousResponses;
             console.log(`[Enrichment] DMS Request Payload including collection:`, JSON.stringify(payload, null, 2));
@@ -114,63 +123,133 @@ async function mockServiceCall(service, params, previousResponses) {
     }
 
     const mockData = {
-        norq: {
-            creditScore: 720,
-            creditHistory: {
-                totalLoans: 3,
-                activeLoans: 1,
-                closedLoans: 2,
-                totalDebt: 2500000,
-                paymentHistory: 'GOOD',
-                lastUpdate: new Date().toISOString()
-            },
-            riskLevel: 'LOW'
-        },
         ekeng: {
-            employmentStatus: 'EMPLOYED',
-            employer: {
-                name: 'Tech Solutions LLC',
-                taxId: '01234567',
-                industry: 'IT'
+            "xmlns": "http://norq.am/dxchange/2013",
+            "GetUserData_v2021Result": "true",
+            "argCurrenDate": new Date().toISOString(),
+            "argPrivateData": {
+                "Firstname": "ԱՆԴՐԱՆԻԿ",
+                "Lastname": "ԵՐԻՑՅԱՆ",
+                "Birthdate": "1992-02-07T00:00:00",
+                "Passport": "AO0448726",
+                "IdCard": "016580946",
+                "Soccard": params.nationalId || "1702920925",
+                "Gender": "1"
             },
-            salary: {
-                amount: 850000,
-                currency: 'AMD',
-                verified: true,
-                lastPaymentDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
+            "message": "Identity data retrieved from EKENG"
+        },
+        norq: {
+            "xmlns": "http://norq.am/dxchange/2013",
+            "GetUserData_v2021Result": "true",
+            "argWorkData": {
+                "WorkData_v2018": [
+                    {
+                        "WorkName": "«ՇԻՐԱԿԱՑՈՒ ՃԵՄԱՐԱՆ» ՄԻՋԱԶԳԱՅԻՆ ԳԻՏԱԿՐԹԱԿԱՆ ՀԱՄԱԼԻՐ",
+                        "Salary": "165297",
+                        "EntryDate": "2025-01-01T00:00:00"
+                    }
+                ]
             },
-            employmentDuration: '3 years 2 months'
+            "message": "Income data retrieved from NORQ"
         },
         acra: {
-            companyRegistration: {
-                registered: false,
-                message: 'Individual applicant - no company registration'
-            },
-            directorships: [],
-            businessActivity: 'NONE'
-        },
-        dms: {
-            documentVerification: {
-                idCard: {
-                    verified: true,
-                    issueDate: '2020-05-15',
-                    expiryDate: '2030-05-15',
-                    status: 'VALID'
+            "type": "Bank_Application_LOAN_PP_Answer",
+            "ReqID": "2512512916717616313716220",
+            "AppNumber": "60660",
+            "DateTime": new Date().toLocaleString('en-GB'),
+            "Response": "OK",
+            "SID": "c7tf0oihe5g8qhjcqitecjme1a",
+            "ReportType": "02",
+            "PARTICIPIENT": {
+                "id": "1",
+                "ThePresenceData": "1",
+                "KindBorrower": "1",
+                "RequestTarget": "1",
+                "UsageRange": "1",
+                "ReportNumber": "CAC-RPS-2-2026-147994",
+                "FirstName": previousResponses?.ekeng?.argPrivateData?.Firstname || "ՄԱՐԻԱՄ",
+                "LastName": previousResponses?.ekeng?.argPrivateData?.Lastname || "ԳՐԻԳՈՐՅԱՆ",
+                "PassportNumber": previousResponses?.ekeng?.argPrivateData?.Passport || "BA2681064",
+                "IdCardNumber": previousResponses?.ekeng?.argPrivateData?.IdCard || "006059836",
+                "DateofBirth": previousResponses?.ekeng?.argPrivateData?.Birthdate?.split('T')[0] || "11-12-1983",
+                "SocCardNumber": previousResponses?.ekeng?.argPrivateData?.Soccard || "6112830973",
+                "Address": "Ք.ԱՐՏԱՇԱՏ ԻՍԱԿՈՎԻ/...",
+                "Residence": "Ռեզիդենտ",
+                "TotalLiabilitiesLoan": {
+                    "Amount": "5019621",
+                    "Currency": "AMD"
                 },
-                addressProof: {
-                    verified: false,
-                    required: true
+                "TotalLiabilitiesGuarantee": {
+                    "Amount": "0",
+                    "Currency": "AMD"
+                },
+                "SelfInquiryQuantity30": "0",
+                "SelfInquiryQuantity": "0",
+                "Loans": {
+                    "Loan": [
+                        {
+                            "CreditID": "ACTIVE_001",
+                            "SourceName": "HSBC Armenia",
+                            "Currency": "AMD",
+                            "ActualCreditStart": "15-05-2023",
+                            "CreditStatus": "գործող",
+                            "ContractAmount": "2500000",
+                            "AmountDue": "1200000",
+                            "TheLoanClass": "Ստանդարտ",
+                            "CreditType": "Վարկ"
+                        },
+                        {
+                            "CreditID": "9604089932",
+                            "SourceName": "Ինեկոբանկ ՓԲԸ",
+                            "Currency": "AMD",
+                            "ActualCreditStart": "01-04-2019",
+                            "CreditStatus": "մարված",
+                            "ContractAmount": "475000",
+                            "TheLoanClass": "Ստանդարտ",
+                            "CreditType": "Վարկ"
+                        },
+                        {
+                            "CreditID": "10109564847",
+                            "SourceName": "ԱԿԲԱ ԲԱՆԿ ԲԲԸ",
+                            "Currency": "AMD",
+                            "ActualCreditStart": "21-02-2020",
+                            "CreditStatus": "մարված",
+                            "ContractAmount": "103900",
+                            "TheLoanClass": "Ստանդարտ",
+                            "CreditType": "Ֆակտորինգ"
+                        }
+                    ]
+                },
+                "Inquiries": {
+                    "Inquiry": [
+                        {
+                            "InquiryDate": "10-02-2026",
+                            "SourceName": "Ամերիաբանկ ՓԲԸ",
+                            "InquiryReason": "Վարկի հարցում"
+                        },
+                        {
+                            "InquiryDate": "05-01-2026",
+                            "SourceName": "Վիվասել-ՄՏՍ",
+                            "InquiryReason": "Ապառիկի հարցում"
+                        }
+                    ]
                 }
             },
+            // Metadata for internal scoring
+            creditScore: 720,
+            riskLevel: 'LOW',
+            message: 'Detailed credit report retrieved from ACRA'
+        },
+        dms: {
             aggregatedRiskScore: 75,
             recommendation: 'APPROVE',
-            conditions: ['Provide address proof document'],
-            // Include data from previous services
+            decisions: { limit: 2000000, term: 36, rate: 14.5 },
             enrichmentSummary: previousResponses ? {
-                creditScore: previousResponses.norq?.creditScore,
-                employmentVerified: previousResponses.ekeng?.salary?.verified,
-                companyRegistered: previousResponses.acra?.companyRegistration?.registered
-            } : null
+                identityVerified: true,
+                incomeVerified: true,
+                creditScore: previousResponses.acra?.creditScore
+            } : null,
+            message: 'Scoring calculated via DMS engine'
         }
     };
 
@@ -186,6 +265,41 @@ async function mockServiceCall(service, params, previousResponses) {
 }
 
 /**
+ * Compare API ID data with Application Entity data
+ */
+function verifyIdentity(apiData, entity) {
+    const privateData = apiData?.argPrivateData;
+    if (!privateData) return { success: false, reason: 'No private data in API response' };
+
+    // Clean and compare names (Unicode aware)
+    const apiFirst = (privateData.Firstname || '').trim().toUpperCase();
+    const apiLast = (privateData.Lastname || '').trim().toUpperCase();
+    const dbFirst = (entity.firstNameNonLatin || '').trim().toUpperCase();
+    const dbLast = (entity.lastNameNonLatin || '').trim().toUpperCase();
+
+    // Check birthdate (ignoring time and timezone shifts)
+    const apiDob = privateData.Birthdate ? new Date(privateData.Birthdate).toLocaleDateString('en-CA') : null; // YYYY-MM-DD
+    const dbDob = entity.dateOfBirth ? new Date(entity.dateOfBirth).toLocaleDateString('en-CA') : null;
+
+    const matches = {
+        firstName: apiFirst === dbFirst,
+        lastName: apiLast === dbLast,
+        birthDate: apiDob === dbDob
+    };
+
+    const isVerified = matches.firstName && matches.lastName && matches.birthDate;
+
+    return {
+        success: isVerified,
+        matches,
+        details: {
+            api: { firstName: apiFirst, lastName: apiLast, dob: apiDob },
+            db: { firstName: dbFirst, lastName: dbLast, dob: dbDob }
+        }
+    };
+}
+
+/**
  * Execute enrichment process sequentially
  * Flow: NORQ → EKENG → ACRA → DMS (with collected responses)
  */
@@ -193,10 +307,31 @@ async function executeEnrichment(params, prisma, enrichmentRequestId) {
     const results = [];
     const collectedResponses = {};
 
+    // Get the loan application linked to this enrichment request
+    const enrichmentRequest = await prisma.enrichmentRequest.findUnique({
+        where: { id: enrichmentRequestId },
+        include: {
+            loanApplication: {
+                include: {
+                    participants: {
+                        include: { entity: true }
+                    }
+                }
+            }
+        }
+    });
+
+    const application = enrichmentRequest?.loanApplication;
+    const applicationId = application?.id;
+    const applicant = application?.participants.find(p => p.role === 'APPLICANT')?.entity;
+
     // Service sequence
-    const sequence = ['NORQ', 'EKENG', 'ACRA', 'DMS'];
+    const sequence = ['EKENG', 'NORQ', 'ACRA', 'DMS'];
 
     for (const serviceName of sequence) {
+        if (applicationId) {
+            await workflowService.transitionToNext(applicationId);
+        }
         const service = SERVICES[serviceName];
 
         try {
@@ -206,8 +341,8 @@ async function executeEnrichment(params, prisma, enrichmentRequestId) {
                 data: { status: 'IN_PROGRESS' }
             });
 
-            // For DMS, pass collected responses from previous services
-            const previousResponses = serviceName === 'DMS' ? collectedResponses : null;
+            // For ACRA and DMS, pass collected responses from previous services
+            const previousResponses = (serviceName === 'ACRA' || serviceName === 'DMS') ? collectedResponses : null;
 
             // Call the service
             const result = await callService(serviceName, params, previousResponses);
@@ -231,6 +366,27 @@ async function executeEnrichment(params, prisma, enrichmentRequestId) {
             // Collect successful responses for DMS
             if (result.success && serviceName !== 'DMS') {
                 collectedResponses[service.name] = result.data;
+            }
+
+            // --- SPECIFIC STAGE LOGIC: ID VERIFICATION ---
+            if (serviceName === 'EKENG' && result.success && applicant) {
+                const idVerification = verifyIdentity(result.data, applicant);
+
+                await prisma.log.create({
+                    data: {
+                        action: 'IDENTITY_VERIFICATION',
+                        details: JSON.stringify(idVerification),
+                        loanApplicationId: applicationId
+                    }
+                });
+
+                if (!idVerification.success) {
+                    console.log(`[Enrichment] Identity verification failed for Application #${applicationId}`);
+                    // You could potentially stop the loop here or mark as partial
+                    // For now we continue but log the failure
+                } else {
+                    console.log(`[Enrichment] Identity verified successfully for Application #${applicationId}`);
+                }
             }
 
             // Optional: decide whether to continue on failure
@@ -271,13 +427,13 @@ async function executeEnrichment(params, prisma, enrichmentRequestId) {
     });
 
     // --- INTEGRATION WITH LOAN APPLICATION & SCORING ---
-    const enrichmentRequest = await prisma.enrichmentRequest.findUnique({
+    const appRequest = await prisma.enrichmentRequest.findUnique({
         where: { id: enrichmentRequestId },
         include: { loanApplication: true }
     });
 
-    if (enrichmentRequest.loanApplication) {
-        const applicationId = enrichmentRequest.loanApplication.id;
+    if (appRequest.loanApplication) {
+        const applicationId = appRequest.loanApplication.id;
 
         if (finalStatus === 'FAILED') {
             await prisma.loanApplication.update({
@@ -308,7 +464,7 @@ async function executeEnrichment(params, prisma, enrichmentRequestId) {
                     }
                 });
 
-                // Transition to Scoring stage (Sets status to OFFER_READY)
+                // Transition to Contracts stage (from Scoring)
                 await workflowService.transitionToNext(applicationId);
             }
         }

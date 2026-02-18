@@ -6,6 +6,7 @@ const { executeEnrichment } = require('../services/enrichmentService');
 const documentService = require('../services/documentService');
 const otpService = require('../services/otpService');
 const workflowService = require('../services/workflowService');
+const integrationService = require('../services/integration');
 
 /**
  * @swagger
@@ -117,7 +118,20 @@ router.get('/:id/offer', async (req, res) => {
                     }
                 }
             },
-            currentStage: true
+            currentStage: true,
+            participants: {
+                include: { entity: true }
+            },
+            enrichmentRequest: {
+                include: {
+                    results: {
+                        orderBy: { sequenceOrder: 'asc' }
+                    }
+                }
+            },
+            logs: {
+                orderBy: { createdAt: 'desc' }
+            }
         }
     });
 
@@ -131,6 +145,13 @@ router.get('/:id/offer', async (req, res) => {
         interestRate: application.interestRate,
         currency: application.currency,
         currentStage: application.currentStage,
+        applicationData: application.applicationData,
+        participants: application.participants.map(p => ({
+            role: p.role,
+            entity: p.entity
+        })),
+        enrichment: application.enrichmentRequest,
+        logs: application.logs,
         stages: application.productType.allowedStages.map(ps => ({
             id: ps.stage.id,
             name: ps.stage.name,
@@ -218,8 +239,20 @@ router.post('/:id/disbursement', async (req, res) => {
     const application = await prisma.loanApplication.findUnique({ where: { id: parseInt(id) } });
     if (!application) return res.status(404).json({ error: 'Application not found' });
 
-    if (application.status !== 'OTP_VERIFIED') {
-        return res.status(400).json({ error: 'OTP must be verified before providing bank details.' });
+    // Allow disbursement if signing is complete OR if they verified OTP (depending on which flow is active)
+    if (!['SIGNING_COMPLETE', 'OTP_VERIFIED'].includes(application.status)) {
+        return res.status(400).json({ error: 'Contracts must be signed before disbursement.' });
+    }
+
+    // Call Core Banking (Armsoft)
+    const disbursementResult = await integrationService.disburseLoan({
+        ...application,
+        bankName,
+        accountNumber
+    });
+
+    if (!disbursementResult.success) {
+        return res.status(500).json({ error: 'Core Banking Disbursement failed' });
     }
 
     await prisma.loanApplication.update({
@@ -231,7 +264,14 @@ router.post('/:id/disbursement', async (req, res) => {
         }
     });
 
-    res.json({ message: 'Disbursement details saved. Loan process completed!', status: 'DISBURSED' });
+    // Move to final stage (Disbursement)
+    await workflowService.transitionToNext(parseInt(id));
+
+    res.json({
+        message: 'Loan successfully disbursed via Armsoft!',
+        status: 'DISBURSED',
+        transactionId: disbursementResult.transactionId
+    });
 });
 
 /**

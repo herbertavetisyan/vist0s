@@ -57,6 +57,23 @@ class IntegrationService {
         console.log(`[Integration] Sending Email to ${email}: [${subject}]`);
         return true;
     }
+
+    /**
+     * Set the loan and make payment via Core Banking
+     * @param {object} application 
+     */
+    async disburseLoan(application) {
+        console.log(`[Integration] 🏦 Calling Core Banking (Armsoft) for Disbursement...`);
+        console.log(`[Integration] Transferring ${application.selectedAmount} ${application.currency} to Acc: ${application.accountNumber} (${application.bankName})`);
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        return {
+            success: true,
+            transactionId: `AS-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+            timestamp: new Date().toISOString()
+        };
+    }
 }
 
 module.exports = new IntegrationService();

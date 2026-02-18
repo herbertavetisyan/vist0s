@@ -261,7 +261,7 @@ const Enrichment = () => {
                                         <p className="text-green-700 text-sm">Once enrichment reaches 100%, your personalized loan offer will be ready.</p>
                                     </div>
                                     <button
-                                        onClick={() => navigate(`/applications?id=${applicationId}`)}
+                                        onClick={() => navigate(`/applications/journey?id=${applicationId}`)}
                                         className="px-8 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition shadow-lg shadow-green-200 whitespace-nowrap"
                                     >
                                         View Application Journey →

@@ -39,6 +39,23 @@ router.post('/applications', verifyApiKey, async (req, res) => {
         });
     } catch (error) {
         console.error('Partner Application Error:', error);
+
+        // Handle Prisma Unique Constraint Violation (e.g., duplicate externalId)
+        if (error.code === 'P2002') {
+            return res.status(409).json({
+                error: 'Application already exists',
+                details: 'Duplicate value for unique field'
+            });
+        }
+
+        // Handle Custom Validation Errors
+        if (error.message.includes('Validation Error')) {
+            return res.status(400).json({
+                error: 'Validation Error',
+                details: error.message
+            });
+        }
+
         res.status(500).json({ error: 'Failed to process partner application' });
     }
 });
