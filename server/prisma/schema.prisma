@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id           String        @id @default(uuid())
+  name         String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  applicants   Applicant[]
+  applications Application[]
+  loanTypes    LoanType[]
+  partners     Partner[]
+  roles        Role[]
+  settings     Setting[]
+  users        User[]
+}
+
+model Setting {
+  id        String   @id @default(uuid())
+  tenantId  String
+  key       String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, key])
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  permissions Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  users       User[]
+
+  @@unique([tenantId, name])
+}
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String
+  roleId       String
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  role         Role     @relation(fields: [roleId], references: [id])
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model Partner {
+  id           String        @id @default(uuid())
+  tenantId     String
+  name         String
+  apiKey       String        @unique
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  applications Application[]
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+}
+
+model LoanType {
+  id                    String          @id @default(uuid())
+  tenantId              String
+  productId             String
+  name                  String
+  currency              String          @default("AMD")
+  minAmount             Float
+  maxAmount             Float
+  minTenure             Int
+  maxTenure             Int
+  allowedApplicantTypes ApplicantType[]
+  allowedRoles          ApplicantRole[]
+  requiredDocuments     Json            @default("[]")
+  stagesConfig          Json
+  isPartnerOriginated   Boolean         @default(false)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  applications          Application[]
+  tenant                Tenant          @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, productId])
+}
+
+model Applicant {
+  id           String        @id @default(uuid())
+  tenantId     String
+  type         ApplicantType @default(PERSON)
+  role         ApplicantRole @default(APPLICANT)
+  firstName    String?
+  lastName     String?
+  passport     String?
+  ssn          String?
+  companyName  String?
+  taxId        String?
+  phone        String?
+  email        String?
+  address      String?
+  version      Int           @default(1)
+  previousId   String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  applications Application[]
+}
+
+model Application {
+  id                     String    @id @default(uuid())
+  tenantId               String
+  applicantId            String
+  loanTypeId             String
+  partnerId              String?
+  requestedAmount        Float
+  requestedTenure        Int
+  status                 String    @default("DRAFT")
+  currentStage           String    @default("ENTITIES")
+  idVerificationData     Json?
+  incomeVerificationData Json?
+  creditBureauData       Json?
+  scoringData            Json?
+  manualReviewData       Json?
+  contractData           Json?
+  disbursementData       Json?
+  kycData                Json?
+  approvedAmount         Float?
+  approvedTenure         Int?
+  assignedRate           Float?
+  serviceFee             Float?
+  armsoftTemplate        String?
+  finalCalculatedAmount  Float?
+  bankAccountNumber      String?
+  repaymentSchedule      Json?
+  contractGenerated      Boolean   @default(false)
+  otpCode                String?
+  otpStatus              String    @default("PENDING")
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  applicant              Applicant @relation(fields: [applicantId], references: [id])
+  loanType               LoanType  @relation(fields: [loanTypeId], references: [id])
+  partner                Partner?  @relation(fields: [partnerId], references: [id])
+  tenant                 Tenant    @relation(fields: [tenantId], references: [id])
+}
+
+enum ApplicantType {
+  PERSON
+  LEGAL_ENTITY
+  IE
+}
+
+enum ApplicantRole {
+  APPLICANT
+  CO_APPLICANT
+  GUARANTOR
+  PLEDGER
+}

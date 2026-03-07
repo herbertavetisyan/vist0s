@@ -1,0 +1,96 @@
+name: VistOS CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Install Dependencies (Server)
+        working-directory: ./server
+        run: npm ci
+
+      - name: Verify Prisma Client Generation
+        working-directory: ./server
+        run: npx prisma generate
+
+      - name: Install Dependencies (Client)
+        working-directory: ./client
+        run: npm ci
+
+      - name: Build and Lint Client
+        working-directory: ./client
+        run: |
+          npm run build
+          # npm run lint (Uncomment once eslint rules are completely configured)
+
+  build-and-push-images:
+    needs: verify
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    # Needs configuration: Set up GitHub Secrets for REGISTRY_USERNAME and REGISTRY_PASSWORD
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Server Image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./server
+          push: true
+          tags: ghcr.io/${{ github.repository }}/vistos-server:latest
+
+      - name: Build and push Client Image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./client
+          push: true
+          tags: ghcr.io/${{ github.repository }}/vistos-client:latest
+
+  deploy:
+    needs: build-and-push-images
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Trigger Remote Deployment
+        run: |
+          echo "Simulating Remote Deployment..."
+          echo "In a real scenario, this would SSH into the production server using appleboy/ssh-action"
+          echo "and run: docker pull, docker-compose down, docker-compose up -d"
+          # Example SSH config:
+          # - uses: appleboy/ssh-action@v0.1.7
+          #   with:
+          #     host: ${{ secrets.SERVER_HOST }}
+          #     username: ${{ secrets.SERVER_USER }}
+          #     key: ${{ secrets.SERVER_SSH_KEY }}
+          #     script: |
+          #       cd /opt/vistos
+          #       docker-compose pull
+          #       docker-compose up -d
