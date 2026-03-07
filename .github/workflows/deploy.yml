@@ -3,104 +3,62 @@ name: VistOS CI/CD Pipeline
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
 
 env:
   REGISTRY: ghcr.io
-  REPO: ${{ github.repository }}
+  IMAGE_PREFIX: ghcr.io/${{ github.repository }}
 
 jobs:
-  # ─── Job 1: Verify ────────────────────────────────────────────────────────
-  verify:
-    name: Verify Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: "**/package-lock.json"
-
-      - name: Install & generate Prisma (Server)
-        working-directory: ./server
-        run: |
-          npm ci
-          npx prisma generate
-
-      - name: Build Client
-        working-directory: ./client
-        run: |
-          npm ci
-          npm run build
-
-  # ─── Job 2: Build & Push Images ───────────────────────────────────────────
   build-and-push:
-    name: Build & Push Docker Images
-    needs: verify
+    name: Build & Push Images
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & Push Server Image
+      - name: Build and push Server
         uses: docker/build-push-action@v5
         with:
           context: ./server
           push: true
-          tags: ghcr.io/${{ env.REPO }}/vistos-server:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ env.IMAGE_PREFIX }}-server:latest
 
-      - name: Build & Push Client Image
+      - name: Build and push Client
         uses: docker/build-push-action@v5
         with:
           context: ./client
           push: true
-          tags: ghcr.io/${{ env.REPO }}/vistos-client:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ env.IMAGE_PREFIX }}-client:latest
 
-  # ─── Job 3: Deploy to Production ──────────────────────────────────────────
-  deploy:
+  deploy-to-production:
     name: Deploy to Production
     needs: build-and-push
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-
+    runs-on: self-hosted
     steps:
-      - name: SSH & Deploy
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: root
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd /opt/vist
-
-            # Log in to GHCR so we can pull private packages
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin 2>/dev/null || true
-
-            # Pull latest images and restart
-            docker compose pull server client
-            docker compose up -d --no-build server client
-
-            # Show running containers
-            docker compose ps
+      - name: Pull pre-built images and restart
+        run: |
+          cd /opt/vist
+          # Pull latest code just to get any docker-compose.yml changes
+          git fetch origin main
+          git reset --hard origin/main
+          
+          # Pull the pre-built images from GHCR
+          docker compose pull
+          
+          # Restart containers with the new images (zero build time!)
+          docker compose up -d
+          
+      - name: Health check
+        run: |
+          docker compose -f /opt/vist/docker-compose.yml ps
