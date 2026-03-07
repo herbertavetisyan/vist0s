@@ -1,0 +1,41 @@
+name: Rollback Production
+
+# Manual trigger only — never runs automatically.
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Git SHA of the image to roll back to (e.g. abc1234)"
+        required: true
+
+env:
+  SERVER_IMAGE: ghcr.io/${{ github.repository_owner }}/vistos-server
+  CLIENT_IMAGE: ghcr.io/${{ github.repository_owner }}/vistos-client
+
+jobs:
+  rollback:
+    name: Rollback to SHA ${{ github.event.inputs.sha }}
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Execute rollback via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            set -e
+            SHA="${{ github.event.inputs.sha }}"
+
+            echo "→ Rolling back to images tagged: $SHA"
+
+            cd /opt/vist
+
+            # Override the images for this run
+            SERVER_IMAGE=${{ env.SERVER_IMAGE }}:$SHA \
+            CLIENT_IMAGE=${{ env.CLIENT_IMAGE }}:$SHA \
+            docker compose up -d --no-build
+
+            echo "✅ Rollback to $SHA complete"
