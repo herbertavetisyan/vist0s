@@ -1,0 +1,17 @@
+# Development override — builds from local source instead of pulling GHCR images.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+version: "3.8"
+
+services:
+  server:
+    image: ""
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+
+  client:
+    image: ""
+    build:
+      context: ./client
+      dockerfile: Dockerfile
