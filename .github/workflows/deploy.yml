@@ -49,6 +49,9 @@ jobs:
       - name: Pull pre-built images and restart
         run: |
           cd /opt/vist
+          # Prevent dubious ownership errors if the directory is owned by root
+          git config --global --add safe.directory /opt/vist
+          
           # Pull latest code just to get any docker-compose.yml changes
           git fetch origin main
           git reset --hard origin/main
