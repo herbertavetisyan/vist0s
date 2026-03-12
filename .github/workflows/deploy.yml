@@ -94,6 +94,9 @@ jobs:
             echo "→ Pulling new images..."
             docker compose pull
 
+            echo "→ Removing stale containers to avoid name conflicts..."
+            docker rm -f vistos_client vistos_server || true
+
             echo "→ Restarting services with zero-downtime..."
             docker compose up -d --remove-orphans
 
