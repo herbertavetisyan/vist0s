@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import * as mockIntegrations from '../services/integrationMockService.js';
-import { generateLoanContractPdf, generateIndividualPaperPdf } from '../utils/pdfGenerator.js';
+import fs from 'fs';
 import * as dmsService from '../services/dmsService.js';
 
 const prisma = new PrismaClient();
@@ -548,43 +548,27 @@ export const verifyOtp = async (req, res) => {
 
 export const downloadLoanContract = async (req, res) => {
     try {
-        const { id } = req.params;
-        const application = await prisma.application.findUnique({
-            where: { id },
-            include: { applicant: true }
-        });
-
-        if (!application) return res.status(404).send('Application not found');
-
-        const pdfBuffer = await generateLoanContractPdf(application);
-
+        const filePath = '/usr/src/app/static/credit_Contract.pdf';
+        if (!fs.existsSync(filePath)) return res.status(404).send('Contract file not found');
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `inline; filename="Loan_Contract_${id.substring(0, 8)}.pdf"`);
-        res.send(pdfBuffer);
+        res.setHeader('Content-Disposition', 'attachment; filename="Loan_Contract.pdf"');
+        fs.createReadStream(filePath).pipe(res);
     } catch (error) {
-        console.error("PDF Gen Error:", error);
-        res.status(500).send('Error generating Loan Contract PDF');
+        console.error("PDF Serve Error:", error);
+        res.status(500).send('Error serving Loan Contract PDF');
     }
 };
 
 export const downloadIndividualPaper = async (req, res) => {
     try {
-        const { id } = req.params;
-        const application = await prisma.application.findUnique({
-            where: { id },
-            include: { applicant: true }
-        });
-
-        if (!application) return res.status(404).send('Application not found');
-
-        const pdfBuffer = await generateIndividualPaperPdf(application);
-
+        const filePath = '/usr/src/app/static/anhatakan.pdf';
+        if (!fs.existsSync(filePath)) return res.status(404).send('Individual paper file not found');
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `inline; filename="Individual_Paper_${id.substring(0, 8)}.pdf"`);
-        res.send(pdfBuffer);
+        res.setHeader('Content-Disposition', 'attachment; filename="anhatakan.pdf"');
+        fs.createReadStream(filePath).pipe(res);
     } catch (error) {
-        console.error("PDF Gen Error:", error);
-        res.status(500).send('Error generating Individual Paper PDF');
+        console.error("PDF Serve Error:", error);
+        res.status(500).send('Error serving Individual Paper PDF');
     }
 };
 

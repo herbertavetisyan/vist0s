@@ -317,6 +317,7 @@ const ApplicationDetail = () => {
                                 <div style={{ marginBottom: '1.5rem', background: 'rgba(76, 175, 80, 0.05)', border: '1px solid rgba(76, 175, 80, 0.2)', padding: '1rem', borderRadius: '8px' }}>
                                     <p style={{ fontSize: '0.85rem', color: 'var(--accent-base)', marginBottom: '0.5rem', fontWeight: 'bold' }}>Applicant Summary</p>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.85rem' }}>
+                                        <div style={{ gridColumn: 'span 2' }}><strong>Application ID:</strong> <span style={{ fontFamily: 'monospace', color: 'var(--accent-base)' }}>{application.id}</span></div>
                                         <div><strong>Name:</strong> {applicant.firstName} {applicant.lastName}</div>
                                         <div><strong>Passport:</strong> {applicant.passport || 'N/A'}</div>
                                         <div><strong>SSN:</strong> {applicant.ssn || 'N/A'}</div>

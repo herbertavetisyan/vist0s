@@ -20,10 +20,11 @@ import { tenantMiddleware } from '../middlewares/tenantMiddleware.js';
 
 const router = express.Router();
 
-// Protected by internal Auth OR Partner API key
-// For simplicity in this structure, we'll assume internal User auth is standard here.
-// In a full production setup, we'd have a separate middleware path for API keys for Partner endpoints.
+// Public document download routes (no auth required for direct download links)
+router.get('/:id/documents/contract', downloadLoanContract);
+router.get('/:id/documents/individual-paper', downloadIndividualPaper);
 
+// All other routes are protected
 router.use(authMiddleware);
 router.use(tenantMiddleware);
 
@@ -289,22 +290,19 @@ router.post('/:id/otp/verify', verifyOtp);
  *               type: string
  *               format: binary
  */
-router.get('/:id/documents/contract', downloadLoanContract);
-
 /**
  * @swagger
  * /applications/{id}/documents/individual-paper:
  *   get:
- *     summary: Download Individual Paper PDF
+ *     summary: Download Individual Paper (Anhatakan) PDF
  *     tags: [Applications]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
+ *         description: Application ID
  *     responses:
  *       200:
  *         description: PDF File
@@ -313,8 +311,10 @@ router.get('/:id/documents/contract', downloadLoanContract);
  *             schema:
  *               type: string
  *               format: binary
+ *       404:
+ *         description: File not found
  */
-router.get('/:id/documents/individual-paper', downloadIndividualPaper);
+// (document download routes are registered above, before auth middleware)
 
 /**
  * @swagger
