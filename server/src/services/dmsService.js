@@ -228,8 +228,15 @@ export const scoreApplication = async (applicationRecord, applicantRecord, dmsTy
         let payload;
 
         if (dmsType === 'RECALCULATE' && recalculationPayload) {
-            // Specialized recalculation payload passed directly from the API consumer
-            payload = recalculationPayload;
+            // Build the specific flat payload expected by the DMS recalculation endpoint
+            payload = {
+                LoanType: applicationRecord?.loanType?.productId || "001",
+                MonthlyCommission: 0,
+                ExecutedAmount: recalculationPayload.ExecutedAmount,
+                Rate: applicationRecord?.assignedRate || 0,
+                Duration: applicationRecord?.approvedTenure || applicationRecord?.requestedTenure || 24,
+                Prepayment: 0
+            };
         } else {
             // Build the full structured payload for the main scoring flow
             payload = buildMainPayload(applicationRecord, applicantRecord);

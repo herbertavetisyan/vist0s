@@ -3,8 +3,19 @@ import * as mockIntegrations from '../services/integrationMockService.js';
 import fs from 'fs';
 import * as dmsService from '../services/dmsService.js';
 
-const prisma = new PrismaClient();
+const deepEqual = (obj1, obj2) => {
+    if (obj1 === obj2) return true;
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 == null || obj2 == null) return false;
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    if (keys1.length !== keys2.length) return false;
+    for (const key of keys1) {
+        if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) return false;
+    }
+    return true;
+};
 
+const prisma = new PrismaClient();
 export const createApplication = async (req, res) => {
     try {
         const tenantId = req.tenantId;
@@ -452,28 +463,76 @@ export const processDisbursement = async (req, res) => {
 export const recalculateLoan = async (req, res) => {
     try {
         const { id } = req.params;
-        const { finalAmount } = req.body;
-        const application = await prisma.application.findUnique({ where: { id } });
+        const { ExecutedAmount } = req.body;
+
+        if (ExecutedAmount === undefined || isNaN(ExecutedAmount) || ExecutedAmount <= 0) {
+            return res.status(400).json({ error: 'Valid positive ExecutedAmount field is required' });
+        }
+
+        let application = await prisma.application.findUnique({
+            where: { id },
+            include: { applicant: true }
+        });
 
         if (!application) return res.status(404).json({ error: 'Application not found' });
-        if (!['CONTRACTS', 'MANUAL_REVIEW'].includes(application.currentStage)) {
+        if (!['CONTRACTS', 'MANUAL_REVIEW', 'SCORING'].includes(application.currentStage)) {
             return res.status(400).json({ error: 'Invalid Stage for recalculation' });
         }
 
-        const amount = Number(finalAmount);
-        if (amount > application.approvedAmount) {
-            return res.status(400).json({ error: 'Cannot exceed approved amount' });
+        const amount = Number(ExecutedAmount);
+
+        // Apply new requested amount temporarily for scoring payload
+        application.requestedAmount = amount;
+        const applicantRec = application.applicant;
+
+        let scoringResult = null;
+        let approvedAmount = null;
+        let approvedTenure = application.requestedTenure;
+        let assignedRate = null;
+
+        const scoringResultRaw = await dmsService.scoreApplication(application, applicantRec, 'RECALCULATE', { ExecutedAmount: amount });
+        scoringResult = scoringResultRaw?.success && scoringResultRaw?.response ? scoringResultRaw.response : scoringResultRaw;
+
+        let maxOfferLimit = application.requestedAmount;
+
+        if (scoringResult?.EffectiveAnnualRate) {
+            assignedRate = parseFloat(scoringResult.EffectiveAnnualRate);
+            approvedAmount = amount;
+        } else {
+            maxOfferLimit = 0;
+            if (scoringResult?.Limit > 0) {
+                maxOfferLimit = scoringResult.Limit;
+                if (scoringResult?.Offers && scoringResult.Offers.length > 0) {
+                    approvedTenure = scoringResult.Offers[0].Duration || approvedTenure;
+                    assignedRate = scoringResult.Offers[0].Rate || assignedRate;
+                }
+            } else if (scoringResult?.Offers && scoringResult.Offers.length > 0) {
+                const validOffers = scoringResult.Offers.filter(o => o.Limit > 0);
+                if (validOffers.length > 0) {
+                    maxOfferLimit = validOffers[0].Limit;
+                    approvedTenure = validOffers[0].Duration;
+                    assignedRate = validOffers[0].Rate;
+                }
+            }
+
+            if (maxOfferLimit === 0) {
+                return res.status(400).json({ error: 'No valid offer available from scoring for this application' });
+            }
+            if (amount > maxOfferLimit) {
+                return res.status(400).json({ error: `Requested amount (${amount}) cannot be more than the offer scoring limit (${maxOfferLimit})` });
+            }
+            approvedAmount = amount;
         }
 
-        const rescoreResult = await mockIntegrations.mockDmsScoring(amount);
-        const finalRate = application.assignedRate || rescoreResult.Rate;
-        const finalTenure = application.approvedTenure || rescoreResult.Duration;
-
-        const scheduleResult = await mockIntegrations.mockArmsoftSchedule(amount, finalTenure, finalRate);
+        const scheduleResult = await mockIntegrations.mockArmsoftSchedule(amount, approvedTenure, assignedRate);
 
         const updated = await prisma.application.update({
             where: { id },
             data: {
+                scoringData: scoringResult,
+                approvedAmount,
+                approvedTenure,
+                assignedRate,
                 finalCalculatedAmount: amount,
                 repaymentSchedule: scheduleResult.schedule
             }
@@ -489,6 +548,77 @@ export const recalculateLoan = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Recalculation Failed' });
+    }
+};
+
+export const submitAccountNumber = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { accountNumber, recalculatedResponse } = req.body;
+
+        if (!accountNumber) {
+            return res.status(400).json({ error: 'Account number is required' });
+        }
+
+        const application = await prisma.application.findUnique({
+            where: { id },
+            include: { applicant: true }
+        });
+
+        if (!application) return res.status(404).json({ error: 'Application not found' });
+
+        // Verify that the critical data values provided in the recalculated response match the actual scoring data in DB.
+        // We do a subset match to allow for flexibility if the database scoringData contains extraneous metadata.
+        const actualScoringData = application.scoringData || {};
+        let isMatch = true;
+
+        if (typeof recalculatedResponse === 'object' && recalculatedResponse !== null) {
+            for (const key of Object.keys(recalculatedResponse)) {
+                // Use loose string comparison for numbers avoiding strict type mismatches (e.g. 0 vs "0")
+                if (String(recalculatedResponse[key]) !== String(actualScoringData[key])) {
+                    isMatch = false;
+                    break;
+                }
+            }
+        } else {
+            isMatch = false;
+        }
+
+        if (!isMatch) {
+            return res.status(400).json({
+                error: 'The provided calculation response does not match the last requested offer.',
+                expected: actualScoringData,
+                received: recalculatedResponse
+            });
+        }
+
+        const updated = await prisma.application.update({
+            where: { id },
+            data: {
+                bankAccountNumber: accountNumber,
+                currentStage: 'CONTRACTS'
+            },
+            include: { applicant: true, loanType: true, partner: true }
+        });
+
+        // Use dynamic PDF generator instead of strict static file responses
+        const { generateLoanContractPdf, generateIndividualPaperPdf } = await import('../utils/pdfGenerator.js');
+
+        const contractPdfBuffer = await generateLoanContractPdf(updated);
+        const individualPdfBuffer = await generateIndividualPaperPdf(updated);
+
+        res.json({
+            message: 'Account number verified and contracts generated successfully.',
+            application: updated,
+            documents: {
+                contract: contractPdfBuffer.toString('base64'),
+                individualPaper: individualPdfBuffer.toString('base64')
+            }
+        });
+
+    } catch (error) {
+        console.error('Account number submission failed:', error);
+        res.status(500).json({ error: 'Failed to process account number submission' });
     }
 };
 

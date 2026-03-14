@@ -13,7 +13,8 @@ import {
     generateContracts,
     processDisbursement,
     downloadLoanContract,
-    downloadIndividualPaper
+    downloadIndividualPaper,
+    submitAccountNumber
 } from '../controllers/applicationController.js';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware.js';
@@ -355,5 +356,38 @@ router.post('/:id/stages/contracts', generateContracts);
  *         description: Funds disbursed
  */
 router.post('/:id/stages/disbursement', processDisbursement);
+
+/**
+ * @swagger
+ * /applications/{id}/account-number:
+ *   post:
+ *     summary: Submit an account number and exact recalculated response to finalize contracts
+ *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               accountNumber:
+ *                 type: string
+ *               recalculatedResponse:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Account successfully accepted and PDFs generated
+ *       400:
+ *         description: Validation failed (Mismatched recalculated payload)
+ */
+router.post('/:id/account-number', submitAccountNumber);
 
 export default router;

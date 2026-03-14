@@ -7,9 +7,9 @@ description: Run the VistOS project (server + client + database)
 IMPORTANT: Always use `docker compose` (with a space, V2) — NEVER `docker-compose` (with a hyphen, V1). The V1 CLI is installed but incompatible with the compose file format used in this project.
 
 // turbo-all
-1. Navigate to the project root and bring up all services (db, server, client) with a fresh build:
+1. Navigate to the project root and bring up all services (db, server, client) with a fresh dev build:
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ```
 
 // turbo

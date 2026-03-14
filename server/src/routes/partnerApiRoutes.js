@@ -1,7 +1,7 @@
 import express from 'express';
 import { partnerMiddleware } from '../middlewares/partnerMiddleware.js';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware.js';
-import { createApplicationFromPartner, recalculateApplicationFromPartner } from '../controllers/partnerApiController.js';
+import { createApplicationFromPartner, recalculateApplicationFromPartner, submitAccountNumberFromPartner } from '../controllers/partnerApiController.js';
 import { partnerApiErrorHandler } from '../middlewares/errorHandler.js';
 import logger, { redactSensitiveData } from '../utils/logger.js';
 
@@ -172,9 +172,9 @@ router.post('/applications', createApplicationFromPartner);
  *           schema:
  *             type: object
  *             required:
- *               - amount
+ *               - ExecutedAmount
  *             properties:
- *               amount:
+ *               ExecutedAmount:
  *                 type: number
  *                 description: The new requested amount to recalculate scoring for, representing the requested loan limit
  *     responses:
@@ -186,6 +186,39 @@ router.post('/applications', createApplicationFromPartner);
  *         description: Application cannot be recalculated
  */
 router.post('/applications/:id/recalculate', recalculateApplicationFromPartner);
+
+/**
+ * @swagger
+ * /external/applications/{id}/account-number:
+ *   post:
+ *     summary: Submit an account number and exact recalculated response to finalize contracts (Partner API)
+ *     tags: [External API]
+ *     security:
+ *       - apiKeyAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               accountNumber:
+ *                 type: string
+ *               recalculatedResponse:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Account successfully accepted and PDFs generated
+ *       400:
+ *         description: Validation failed (Mismatched recalculated payload)
+ */
+router.post('/applications/:id/account-number', submitAccountNumberFromPartner);
 
 router.use(partnerApiErrorHandler); // Catch-all partner API errors go here
 

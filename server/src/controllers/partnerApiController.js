@@ -3,6 +3,18 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+
+const deepEqual = (obj1, obj2) => {
+    if (obj1 === obj2) return true;
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 == null || obj2 == null) return false;
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    if (keys1.length !== keys2.length) return false;
+    for (const key of keys1) {
+        if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) return false;
+    }
+    return true;
+};
 import logger, { redactSensitiveData } from '../utils/logger.js';
 import * as mockIntegrations from '../services/integrationMockService.js';
 import * as dmsService from '../services/dmsService.js';
@@ -378,7 +390,8 @@ export const recalculateApplicationFromPartner = async (req, res, next) => {
         }
 
         // Apply new requested amount temporarily for scoring payload
-        application.requestedAmount = parseFloat(ExecutedAmount);
+        const amount = parseFloat(ExecutedAmount);
+        application.requestedAmount = amount;
 
         const applicantRec = application.applicant;
 
@@ -389,7 +402,7 @@ export const recalculateApplicationFromPartner = async (req, res, next) => {
 
         try {
             // 2. Hit DMS scoring with the newly requested amount using the RECALCULATE type
-            const scoringResultRaw = await dmsService.scoreApplication(application, applicantRec, 'RECALCULATE', req.body);
+            const scoringResultRaw = await dmsService.scoreApplication(application, applicantRec, 'RECALCULATE', { ExecutedAmount: amount });
             console.log("Recalculate DMS Result:", JSON.stringify(scoringResultRaw, null, 2));
             scoringResult = scoringResultRaw?.success && scoringResultRaw?.response ? scoringResultRaw.response : scoringResultRaw;
 
@@ -398,7 +411,7 @@ export const recalculateApplicationFromPartner = async (req, res, next) => {
             if (scoringResult?.EffectiveAnnualRate) {
                 // If the recalculate schema returned the new calculate schema
                 assignedRate = parseFloat(scoringResult.EffectiveAnnualRate);
-                approvedAmount = application.requestedAmount;
+                approvedAmount = amount;
             } else {
                 // Fallback for full object structure if we receive one
                 maxOfferLimit = 0;
@@ -422,14 +435,16 @@ export const recalculateApplicationFromPartner = async (req, res, next) => {
                     return res.status(400).json({ error: 'No valid offer available from scoring for this application.' });
                 }
 
-                if (application.requestedAmount > maxOfferLimit) {
+                if (amount > maxOfferLimit) {
                     return res.status(400).json({
-                        error: `Requested amount (${application.requestedAmount}) cannot be more than the offer scoring limit (${maxOfferLimit})`
+                        error: `Requested amount (${amount}) cannot be more than the offer scoring limit (${maxOfferLimit})`
                     });
                 }
 
-                approvedAmount = application.requestedAmount;
+                approvedAmount = amount;
             }
+
+            const scheduleResult = await mockIntegrations.mockArmsoftSchedule(amount, approvedTenure, assignedRate);
 
             // Save final decision
             application = await prisma.application.update({
@@ -439,6 +454,8 @@ export const recalculateApplicationFromPartner = async (req, res, next) => {
                     approvedAmount,
                     approvedTenure,
                     assignedRate,
+                    finalCalculatedAmount: amount,
+                    repaymentSchedule: scheduleResult.schedule,
                     currentStage: 'MANUAL_REVIEW',
                     updatedAt: new Date()
                 }
@@ -482,6 +499,82 @@ export const recalculateApplicationFromPartner = async (req, res, next) => {
         }
 
         res.status(200).json(responsePayload);
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const submitAccountNumberFromPartner = async (req, res, next) => {
+    try {
+        const tenantId = req.tenantId;
+        const partnerId = req.partnerId;
+        const applicationId = req.params.id;
+        const { accountNumber, recalculatedResponse } = req.body;
+
+        if (!accountNumber) {
+            return res.status(400).json({ error: 'Account number is required' });
+        }
+
+        const application = await prisma.application.findUnique({
+            where: { id: applicationId },
+            include: { applicant: true }
+        });
+
+        if (!application) return res.status(404).json({ error: 'Application not found' });
+        if (application.partnerId !== partnerId || application.tenantId !== tenantId) {
+            return res.status(403).json({ error: 'Forbidden: Application does not belong to this partner' });
+        }
+
+        // Verify that the critical data values provided in the recalculated response match the actual scoring data in DB.
+        // We do a subset match to allow for flexibility if the database scoringData contains extraneous metadata.
+        const actualScoringData = application.scoringData || {};
+        let isMatch = true;
+
+        if (typeof recalculatedResponse === 'object' && recalculatedResponse !== null) {
+            for (const key of Object.keys(recalculatedResponse)) {
+                // Use loose string comparison for numbers avoiding strict type mismatches (e.g. 0 vs "0")
+                if (String(recalculatedResponse[key]) !== String(actualScoringData[key])) {
+                    isMatch = false;
+                    break;
+                }
+            }
+        } else {
+            isMatch = false;
+        }
+
+        if (!isMatch) {
+            console.error('Mismatch checking expected vs actual scoringData', JSON.stringify(recalculatedResponse), JSON.stringify(actualScoringData));
+            return res.status(400).json({
+                error: 'The provided calculation response does not match the last requested offer.',
+                expected: actualScoringData,
+                received: recalculatedResponse
+            });
+        }
+
+        const updated = await prisma.application.update({
+            where: { id: applicationId },
+            data: {
+                bankAccountNumber: accountNumber,
+                currentStage: 'CONTRACTS'
+            },
+            include: { applicant: true, loanType: true, partner: true }
+        });
+
+        // Generate PDFs in memory
+        const { generateLoanContractPdf, generateIndividualPaperPdf } = await import('../utils/pdfGenerator.js');
+
+        const contractPdfBuffer = await generateLoanContractPdf(updated);
+        const individualPdfBuffer = await generateIndividualPaperPdf(updated);
+
+        res.json({
+            message: 'Account number verified via Partner API and contracts generated successfully.',
+            applicationId: updated.id,
+            documents: {
+                contract: contractPdfBuffer.toString('base64'),
+                individualPaper: individualPdfBuffer.toString('base64')
+            }
+        });
 
     } catch (error) {
         next(error);
