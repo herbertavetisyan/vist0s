@@ -70,7 +70,7 @@ function drawTable(doc, startX, startY, headers, rows, widths) {
 
 export const generateLoanContractPdf = async (application) => {
     return await generatePdfBuffer((doc) => {
-        const { applicant, finalCalculatedAmount, approvedTenure, assignedRate, serviceFee, bankAccountNumber, repaymentSchedule } = application;
+        const { applicant, finalCalculatedAmount, approvedTenure, assignedRate, serviceFee, bankAccountNumber, repaymentSchedule, scoringData } = application;
         const font = FONT_PATH;
 
         // Header Title
@@ -107,6 +107,10 @@ export const generateLoanContractPdf = async (application) => {
         doc.fillColor('#000000').text(`${applicant.address || 'Ն/Ա'}`, partyStartX + 120, pY);
         pY += 18;
 
+        doc.fillColor('#555555').text('Հեռախոսահամար:', partyStartX, pY);
+        doc.fillColor('#000000').text(`${applicant.phone || 'Ն/Ա'}`, partyStartX + 120, pY);
+        pY += 18;
+
         doc.fillColor('#555555').text('Բանկային հաշիվ:', partyStartX, pY);
         doc.fillColor('#000000').text(`${bankAccountNumber || 'Ն/Ա'}`, partyStartX + 120, pY);
 
@@ -116,24 +120,34 @@ export const generateLoanContractPdf = async (application) => {
         doc.fontSize(14).text('2. ՎԱՐԿԻ ՊԱՅՄԱՆՆԵՐԸ', 40, doc.y, { underline: true });
         doc.moveDown(0.5);
 
-        doc.rect(40, doc.y, doc.page.width - 80, 80).fillAndStroke('#f9fcff', '#b3d4fc');
+        doc.rect(40, doc.y, doc.page.width - 80, 120).fillAndStroke('#f9fcff', '#b3d4fc');
         doc.fillColor('#000000');
 
         pY = doc.y + 10;
         doc.fontSize(10).fillColor('#333333').text('Վարկի գումար:', 50, pY);
-        doc.fillColor('#000000').text(`${finalCalculatedAmount?.toLocaleString() || 0} ՀՀԴ`, 180, pY);
+        doc.fillColor('#000000').text(`${finalCalculatedAmount?.toLocaleString() || 0} ՀՀԴ`, 200, pY);
         pY += 18;
 
-        doc.fillColor('#333333').text('Տարեկան տոկոսադրույք:', 50, pY);
-        doc.fillColor('#000000').text(`${assignedRate || 0}%`, 180, pY);
+        doc.fillColor('#333333').text('Անվանական Տոկոսադրույք:', 50, pY);
+        doc.fillColor('#000000').text(`${assignedRate || 0}%`, 200, pY);
+        pY += 18;
+
+        const effectiveRate = scoringData?.EffectiveAnnualRate || scoringData?.APR || 0;
+        doc.fillColor('#333333').text('Փաստացի Տոկոսադրույք:', 50, pY);
+        doc.fillColor('#000000').text(`${effectiveRate}%`, 200, pY);
         pY += 18;
 
         doc.fillColor('#333333').text('Ժամկետ:', 50, pY);
-        doc.fillColor('#000000').text(`${approvedTenure || 0} ամիս`, 180, pY);
+        doc.fillColor('#000000').text(`${approvedTenure || 0} ամիս`, 200, pY);
+        pY += 18;
+
+        const monthlyPayment = scoringData?.MonthlyPayment || 0;
+        doc.fillColor('#333333').text('Ամսական վճար:', 50, pY);
+        doc.fillColor('#000000').text(`${monthlyPayment?.toLocaleString() || 0} ՀՀԴ`, 200, pY);
         pY += 18;
 
         doc.fillColor('#333333').text('Սպասարկման վճար:', 50, pY);
-        doc.fillColor('#000000').text(`${serviceFee ? serviceFee + ' ՀՀԴ' : '0 ՀՀԴ'}`, 180, pY);
+        doc.fillColor('#000000').text(`${serviceFee ? serviceFee + ' ՀՀԴ' : '0 ՀՀԴ'}`, 200, pY);
 
         doc.y = pY + 30;
 
@@ -180,7 +194,7 @@ export const generateLoanContractPdf = async (application) => {
 
 export const generateIndividualPaperPdf = async (application) => {
     return await generatePdfBuffer((doc) => {
-        const { applicant, finalCalculatedAmount, approvedTenure, assignedRate, bankAccountNumber } = application;
+        const { applicant, finalCalculatedAmount, approvedTenure, assignedRate, bankAccountNumber, scoringData } = application;
         const font = FONT_PATH;
 
         doc.font(font).fontSize(18).text('ԱՆՀԱՏԱԿԱՆ ԹԵՐԹԻԿ', { align: 'center' });
@@ -191,7 +205,7 @@ export const generateIndividualPaperPdf = async (application) => {
         doc.moveDown(3);
 
         // Content Box
-        doc.rect(50, doc.y, doc.page.width - 100, 200).stroke('#cccccc');
+        doc.rect(50, doc.y, doc.page.width - 100, 320).stroke('#cccccc');
 
         let pY = doc.y + 20;
 
@@ -201,33 +215,56 @@ export const generateIndividualPaperPdf = async (application) => {
 
         doc.fontSize(11);
         doc.text('Անուն Ազգանուն:', 70, pY);
-        doc.text(`${applicant.firstName} ${applicant.lastName}`, 200, pY);
+        doc.text(`${applicant.firstName} ${applicant.lastName}`, 230, pY);
+        pY += 20;
+
+        doc.text('Անձնագրի համար:', 70, pY);
+        doc.text(`${applicant.passport || 'Ն/Ա'}`, 230, pY);
         pY += 20;
 
         doc.text('ՀԾՀ (SSN):', 70, pY);
-        doc.text(`${applicant.ssn || 'Ն/Ա'}`, 200, pY);
+        doc.text(`${applicant.ssn || 'Ն/Ա'}`, 230, pY);
+        pY += 20;
+
+        doc.text('Հասցե:', 70, pY);
+        doc.text(`${applicant.address || 'Ն/Ա'}`, 230, pY);
+        pY += 20;
+
+        doc.text('Հեռախոսահամար:', 70, pY);
+        doc.text(`${applicant.phone || 'Ն/Ա'}`, 230, pY);
         pY += 20;
 
         doc.text('Բանկային հաշիվ:', 70, pY);
-        doc.text(`${bankAccountNumber || 'Ն/Ա'}`, 200, pY);
+        doc.text(`${bankAccountNumber || 'Ն/Ա'}`, 230, pY);
         pY += 35;
 
         doc.fontSize(14).text('Վարկի Էական Պայմաններ', 70, pY, { underline: true });
         pY += 25;
 
         doc.fontSize(11);
-        doc.text('Վարկի Գումար:', 70, pY);
-        doc.text(`${finalCalculatedAmount?.toLocaleString() || 0} ՀՀԴ`, 200, pY);
+        doc.text('Վարկի Գումար (ՀՀԴ):', 70, pY);
+        doc.text(`${finalCalculatedAmount?.toLocaleString() || 0} ՀՀԴ`, 230, pY);
         pY += 20;
 
-        doc.text('Տարեկան Տոկոսադրույք:', 70, pY);
-        doc.text(`${assignedRate || 0}%`, 200, pY);
+        doc.text('Անվանական Տարեկան Տոկոսադրույք:', 70, pY);
+        doc.text(`${assignedRate || 0}%`, 230, pY);
         pY += 20;
 
-        doc.text('Մարման Ժամկետ:', 70, pY);
-        doc.text(`${approvedTenure || 0} ամիս`, 200, pY);
+        const effectiveRate = scoringData?.EffectiveAnnualRate || scoringData?.APR || 0;
+        doc.text('Տարեկան Փաստացի Տոկոսադրույք:', 70, pY);
+        doc.text(`${effectiveRate}%`, 230, pY);
+        pY += 20;
 
-        doc.y = pY + 60;
+        doc.text('Մարման Ժամկետ (Ամիս):', 70, pY);
+        doc.text(`${approvedTenure || 0} ամիս`, 230, pY);
+        pY += 20;
+
+        const monthlyPayment = scoringData?.MonthlyPayment || 0;
+        doc.text('Ամսական Վճար (Մոտավոր ՀՀԴ):', 70, pY);
+        doc.text(`${monthlyPayment?.toLocaleString() || 0} ՀՀԴ`, 230, pY);
+        pY += 20;
+
+        doc.y = pY + 40;
 
         doc.moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).stroke('#eeeeee');
         doc.moveDown(1);
