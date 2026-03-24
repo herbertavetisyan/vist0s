@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 
 const EyeIcon = ({ open }) => open ? (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -129,6 +130,7 @@ const SectionCard = ({ title, icon, children, accentColor = 'var(--accent-base)'
 );
 
 const DmsSettings = () => {
+    const { t } = useTranslation();
     const [settings, setSettings] = useState({
         dmsUrl: '',
         dmsKey: '',
@@ -155,7 +157,7 @@ const DmsSettings = () => {
             }
         } catch (error) {
             console.error('Failed to fetch settings', error);
-            toast.error('Failed to load settings');
+            toast.error(t('dmsSettings.fetchError'));
         } finally {
             setLoading(false);
         }
@@ -171,10 +173,10 @@ const DmsSettings = () => {
         setSaving(true);
         try {
             await api.post('/settings', settings);
-            toast.success('DMS settings saved successfully');
+            toast.success(t('dmsSettings.saveSuccess'));
         } catch (error) {
             console.error('Failed to save settings', error);
-            toast.error('Failed to save settings');
+            toast.error(t('dmsSettings.saveError'));
         } finally {
             setSaving(false);
         }
@@ -184,7 +186,7 @@ const DmsSettings = () => {
         return (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '2rem', color: 'var(--text-secondary)' }}>
                 <div className="spinner" />
-                Loading DMS settings…
+                {t('common.loading')}
             </div>
         );
     }
@@ -194,50 +196,50 @@ const DmsSettings = () => {
             {/* Page Header */}
             <header style={{ marginBottom: '2rem' }}>
                 <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                    DMS Integration
+                    {t('dmsSettings.title')}
                 </h1>
                 <p style={{ color: 'var(--text-secondary)', marginTop: '0.35rem', fontSize: '0.9rem' }}>
-                    Configure the Decision Making Software (DMS) endpoints and API keys used for loan scoring.
+                    {t('dmsSettings.subtitle')}
                 </p>
             </header>
 
             <form onSubmit={handleSave}>
-                <SectionCard title="Main Scoring Flow" icon="⚡" accentColor="var(--accent-base)">
+                <SectionCard title={t('dmsSettings.mainFlow')} icon="⚡" accentColor="var(--accent-base)">
                     <FieldGroup
-                        label="DMS API URL"
+                        label={t('dmsSettings.dmsUrl')}
                         name="dmsUrl"
                         value={settings.dmsUrl}
                         onChange={handleChange}
-                        placeholder="https://stage.decision-making.software/api/flows/publish/…/v2"
-                        hint="The primary endpoint called when a new application is scored through the full pipeline."
+                        placeholder={t('dmsSettings.dmsUrlPlaceholder')}
+                        hint={t('dmsSettings.dmsUrlHint')}
                     />
                     <FieldGroup
-                        label="DMS API Key"
+                        label={t('dmsSettings.dmsKey')}
                         name="dmsKey"
                         value={settings.dmsKey}
                         onChange={handleChange}
-                        placeholder="Enter your DMS API key"
-                        hint="Authentication token for the main scoring endpoint. Kept encrypted at rest."
+                        placeholder={t('dmsSettings.dmsKeyPlaceholder')}
+                        hint={t('dmsSettings.dmsKeyHint')}
                         isKey
                     />
                 </SectionCard>
 
-                <SectionCard title="Recalculation Flow" icon="🔄" accentColor="#2962FF">
+                <SectionCard title={t('dmsSettings.recalcFlow')} icon="🔄" accentColor="#2962FF">
                     <FieldGroup
-                        label="Recalculation API URL"
+                        label={t('dmsSettings.recalcUrl')}
                         name="dmsRecalculateUrl"
                         value={settings.dmsRecalculateUrl}
                         onChange={handleChange}
-                        placeholder="https://stage.decision-making.software/api/flows/publish/…/v2"
-                        hint="Endpoint used when recalculating an existing application's monthly payment / rate."
+                        placeholder={t('dmsSettings.recalcUrlPlaceholder')}
+                        hint={t('dmsSettings.recalcUrlHint')}
                     />
                     <FieldGroup
-                        label="Recalculation API Key"
+                        label={t('dmsSettings.recalcKey')}
                         name="dmsRecalculateKey"
                         value={settings.dmsRecalculateKey}
                         onChange={handleChange}
-                        placeholder="Enter your recalculation API key"
-                        hint="Authentication token specifically for the recalculation endpoint."
+                        placeholder={t('dmsSettings.recalcKeyPlaceholder')}
+                        hint={t('dmsSettings.recalcKeyHint')}
                         isKey
                     />
                 </SectionCard>
@@ -254,7 +256,7 @@ const DmsSettings = () => {
                 }}>
                     <span style={{ fontSize: '1rem', flexShrink: 0 }}>ℹ️</span>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.6 }}>
-                        Both flows must be configured for the system to function correctly. The <strong style={{ color: 'var(--text-primary)' }}>main flow</strong> handles full scoring with NORQ + ACRA data. The <strong style={{ color: 'var(--text-primary)' }}>recalculation flow</strong> handles quick monthly payment calculations on an existing decision.
+                        {t('dmsSettings.infoBanner')} <strong style={{ color: 'var(--text-primary)' }}>{t('dmsSettings.mainFlow')}</strong> {t('dmsSettings.infoMainFlow')} <strong style={{ color: 'var(--text-primary)' }}>{t('dmsSettings.recalcFlow')}</strong> {t('dmsSettings.infoRecalcFlow')}
                     </p>
                 </div>
 
@@ -269,9 +271,9 @@ const DmsSettings = () => {
                         {saving ? (
                             <>
                                 <div className="spinner" style={{ width: '14px', height: '14px', borderTopColor: 'var(--bg-primary)' }} />
-                                Saving…
+                                {t('common.save')}
                             </>
-                        ) : 'Save Settings'}
+                        ) : t('dmsSettings.saveBtn')}
                     </button>
                 </div>
             </form>

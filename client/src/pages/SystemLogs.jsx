@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const LEVEL_STYLES = {
     error: { bg: 'rgba(255,23,68,0.12)', color: '#FF8A80', border: 'rgba(255,23,68,0.3)' },
@@ -30,6 +31,7 @@ const LevelBadge = ({ level }) => {
 };
 
 const SystemLogs = () => {
+    const { t } = useTranslation();
     const { token } = useContext(AuthContext);
     const [logFiles, setLogFiles] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -54,7 +56,7 @@ const SystemLogs = () => {
             }
             setError('');
         } catch (err) {
-            setError('Failed to fetch log files');
+            setError(t('systemLogs.fetchFilesError'));
             console.error(err);
         } finally {
             setLoading(false);
@@ -71,7 +73,7 @@ const SystemLogs = () => {
             setLogContent(response.data.reverse());
             setError('');
         } catch (err) {
-            setError(`Failed to fetch content for ${filename}`);
+            setError(t('systemLogs.fetchContentError', { filename }));
             console.error(err);
         } finally {
             setLoading(false);
@@ -87,10 +89,10 @@ const SystemLogs = () => {
             {/* Page Header */}
             <header style={{ marginBottom: '1.5rem', flexShrink: 0 }}>
                 <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                    System Logs
+                    {t('systemLogs.title')}
                 </h1>
                 <p style={{ color: 'var(--text-secondary)', marginTop: '0.35rem', fontSize: '0.9rem' }}>
-                    Real-time Winston runtime logs from the backend server.
+                    {t('systemLogs.subtitle')}
                 </p>
             </header>
 
@@ -129,14 +131,14 @@ const SystemLogs = () => {
                         flexShrink: 0
                     }}>
                         <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
-                            Log Files
+                            {t('systemLogs.fileList')}
                         </span>
                     </div>
                     <div style={{ overflowY: 'auto', flex: 1, padding: '0.5rem' }}>
                         {loading && !logFiles.length ? (
-                            <div style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading…</div>
+                            <div style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>{t('common.loading')}</div>
                         ) : logFiles.length === 0 ? (
-                            <div style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>No log files found.</div>
+                            <div style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>{t('systemLogs.noFiles')}</div>
                         ) : (
                             logFiles.map(file => (
                                 <button
@@ -164,7 +166,7 @@ const SystemLogs = () => {
                                         {file.name}
                                     </div>
                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                        {(file.size / 1024).toFixed(1)} KB
+                                        {(file.size / 1024).toFixed(1)} {t('systemLogs.kb')}
                                     </div>
                                 </button>
                             ))
@@ -193,7 +195,7 @@ const SystemLogs = () => {
                         flexShrink: 0
                     }}>
                         <span style={{ fontSize: '0.875rem', color: selectedFile ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 500 }}>
-                            {selectedFile ? `📄 ${selectedFile}` : 'Select a log file'}
+                            {selectedFile ? `📄 ${selectedFile}` : t('systemLogs.selectFile')}
                         </span>
 
                         <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
@@ -211,10 +213,10 @@ const SystemLogs = () => {
                                     cursor: 'pointer'
                                 }}
                             >
-                                <option value="all">All Levels</option>
-                                <option value="info">Info</option>
-                                <option value="warn">Warn</option>
-                                <option value="error">Error</option>
+                                <option value="all">{t('systemLogs.allLevels')}</option>
+                                <option value="info">{t('systemLogs.info')}</option>
+                                <option value="warn">{t('systemLogs.warn')}</option>
+                                <option value="error">{t('systemLogs.error')}</option>
                             </select>
                             <button
                                 onClick={() => selectedFile && fetchLogContent(selectedFile)}
@@ -223,7 +225,7 @@ const SystemLogs = () => {
                                 style={{ padding: '0.375rem 0.875rem', fontSize: '0.8rem', gap: '0.375rem' }}
                             >
                                 {loading ? <div className="spinner" style={{ width: '12px', height: '12px' }} /> : '↻'}
-                                Refresh
+                                {t('systemLogs.refresh')}
                             </button>
                         </div>
                     </div>
@@ -233,11 +235,11 @@ const SystemLogs = () => {
                         {loading && logContent.length === 0 ? (
                             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                                 <div className="spinner" style={{ margin: '0 auto 1rem' }} />
-                                Loading logs…
+                                {t('systemLogs.loading')}
                             </div>
                         ) : filteredLogs.length === 0 ? (
                             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                                No log entries match the current filter.
+                                {t('systemLogs.noMatch')}
                             </div>
                         ) : (
                             filteredLogs.map((log, idx) => (

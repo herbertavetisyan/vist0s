@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 
 const Applications = () => {
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
 
     // Filter state
     const [searchText, setSearchText] = useState('');
@@ -29,10 +31,10 @@ const Applications = () => {
 
     const getStatusBadge = (status) => {
         switch (status) {
-            case 'APPROVED': return <span className="badge badge-success">Approved</span>;
-            case 'PROCESSING': return <span className="badge badge-info">Processing</span>;
-            case 'REJECTED': return <span className="badge badge-error">Rejected</span>;
-            case 'DISBURSED': return <span className="badge badge-success" style={{ background: 'var(--accent-base)', color: 'var(--bg-primary)' }}>Disbursed</span>;
+            case 'APPROVED': return <span className="badge badge-success">{t('applications.statusApproved')}</span>;
+            case 'PROCESSING': return <span className="badge badge-info">{t('applications.statusProcessing')}</span>;
+            case 'REJECTED': return <span className="badge badge-error">{t('applications.statusRejected')}</span>;
+            case 'DISBURSED': return <span className="badge badge-success" style={{ background: 'var(--accent-base)', color: 'var(--bg-primary)' }}>{t('applications.statusDisbursed')}</span>;
             default: return <span className="badge badge-neutral">{status}</span>;
         }
     };
@@ -79,17 +81,17 @@ const Applications = () => {
         return { date, time };
     };
 
-    if (loading) return <div className="flex-row gap-2"><div className="spinner"></div> Loading Applications...</div>;
+    if (loading) return <div className="flex-row gap-2"><div className="spinner"></div> {t('applications.loading')}</div>;
 
     return (
         <div className="animate-fade-in">
             <div className="flex-row justify-between" style={{ marginBottom: '1.5rem' }}>
                 <div>
-                    <h1>Loan Applications</h1>
-                    <p>Manage and track all originating loans.</p>
+                    <h1>{t('applications.title')}</h1>
+                    <p>{t('applications.subtitle')}</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => navigate('/applications/new')}>
-                    + New Application
+                <button className="btn btn-primary" onClick={() => navigate(`/${i18n.language}/applications/new`)}>
+                    {t('applications.newBtn')}
                 </button>
             </div>
 
@@ -102,7 +104,7 @@ const Applications = () => {
                     <input
                         type="text"
                         className="input-field"
-                        placeholder="Search name, SSN, passport, ID..."
+                        placeholder={t('applications.searchPlaceholder')}
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
                         style={{ marginBottom: 0 }}
@@ -116,7 +118,7 @@ const Applications = () => {
                         style={{ marginBottom: 0, width: 'auto', minWidth: '140px' }}
                     >
                         {uniqueStatuses.map(s => (
-                            <option key={s} value={s}>{s === 'ALL' ? 'All Statuses' : s}</option>
+                            <option key={s} value={s}>{s === 'ALL' ? t('applications.allStatuses') : s}</option>
                         ))}
                     </select>
                     <select
@@ -126,11 +128,11 @@ const Applications = () => {
                         style={{ marginBottom: 0, width: 'auto', minWidth: '180px' }}
                     >
                         {uniqueStages.map(s => (
-                            <option key={s} value={s}>{s === 'ALL' ? 'All Stages' : s.replace(/_/g, ' ')}</option>
+                            <option key={s} value={s}>{s === 'ALL' ? t('applications.allStages') : t(`applicationDetail.stages.${s}`)}</option>
                         ))}
                     </select>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                        {filtered.length} of {applications.length}
+                        {filtered.length} {t('applications.of')} {applications.length}
                     </span>
                 </div>
             </div>
@@ -139,28 +141,28 @@ const Applications = () => {
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead style={{ background: 'var(--bg-surface)' }}>
                         <tr>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>ID</th>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>Applicant</th>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>Type</th>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>Amount</th>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>Stage</th>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>Status</th>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>Created By / Date</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('applications.table.id')}</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('applications.table.applicant')}</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('applications.table.type')}</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('applications.table.amount')}</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('applications.table.stage')}</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('applications.table.status')}</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('applications.table.date')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filtered.length === 0 ? (
                             <tr>
                                 <td colSpan="7" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                    {applications.length === 0 ? 'No applications found. Create the first one!' : 'No applications match the current filters.'}
+                                    {applications.length === 0 ? t('applications.emptyDefault') : t('applications.emptyFiltered')}
                                 </td>
                             </tr>
                         ) : (
                             filtered.map(app => {
                                 const { date, time } = formatDateTime(app.createdAt);
-                                const createdBy = app.partner ? app.partner.name : 'Manual';
+                                const createdBy = app.partner ? app.partner.name : t('applications.manual');
                                 return (
-                                    <tr key={app.id} onClick={() => navigate(`/applications/${app.id}`)} style={{ borderBottom: 'var(--border-subtle)', transition: 'var(--transition-fast)' }} className="hover-row">
+                                    <tr key={app.id} onClick={() => navigate(`/${i18n.language}/applications/${app.id}`)} style={{ borderBottom: 'var(--border-subtle)', transition: 'var(--transition-fast)' }} className="hover-row">
                                         <td style={{ padding: '1rem', fontSize: '0.875rem', fontFamily: 'monospace' }}>{app.id.substring(0, 8)}</td>
                                         <td style={{ padding: '1rem' }}>
                                             <div style={{ fontWeight: 500 }}>{app.applicant?.firstName} {app.applicant?.lastName}</div>
@@ -168,7 +170,7 @@ const Applications = () => {
                                         </td>
                                         <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{app.loanType?.name}</td>
                                         <td style={{ padding: '1rem', fontWeight: 500 }}>{app.requestedAmount?.toLocaleString() || '—'} {app.loanType?.currency}</td>
-                                        <td style={{ padding: '1rem', fontSize: '0.875rem' }}><span className="text-secondary">{app.currentStage.replace(/_/g, ' ')}</span></td>
+                                        <td style={{ padding: '1rem', fontSize: '0.875rem' }}><span className="text-secondary">{t(`applicationDetail.stages.${app.currentStage}`)}</span></td>
                                         <td style={{ padding: '1rem' }}>{getStatusBadge(app.status)}</td>
                                         <td style={{ padding: '1rem' }}>
                                             <div style={{ fontSize: '0.8rem', fontWeight: 500, color: app.partner ? '#42A5F5' : 'var(--text-primary)' }}>

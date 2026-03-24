@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useTranslation } from 'react-i18next';
 
 const Partners = () => {
+    const { t } = useTranslation();
     const [partners, setPartners] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateForm, setShowCreateForm] = useState(false);
@@ -59,7 +61,7 @@ const Partners = () => {
     };
 
     const handleTerminate = async (id) => {
-        if (!window.confirm('Are you sure you want to terminate this API key? This action will immediately revoke all access.')) return;
+        if (!window.confirm(t('partners.confirmTerminate'))) return;
 
         try {
             await api.put(`/partners/${id}/terminate`);
@@ -69,20 +71,20 @@ const Partners = () => {
         }
     };
 
-    if (loading) return <div className="flex-row gap-2"><div className="spinner"></div> Loading Partners...</div>;
+    if (loading) return <div className="flex-row gap-2"><div className="spinner"></div> {t('common.loading')}</div>;
 
     return (
         <div className="animate-fade-in">
             <div className="flex-row justify-between" style={{ marginBottom: '2rem' }}>
                 <div>
-                    <h1>Partner Integrations</h1>
-                    <p>Manage 3rd-party integrators and their API keys.</p>
+                    <h1>{t('partners.title')}</h1>
+                    <p>{t('partners.subtitle')}</p>
                 </div>
                 <button
                     className="btn btn-primary"
                     onClick={() => { setShowCreateForm(!showCreateForm); setNewKey(null); }}
                 >
-                    {showCreateForm ? 'Cancel' : '+ New Partner'}
+                    {showCreateForm ? t('partners.cancelBtn') : t('partners.newBtn')}
                 </button>
             </div>
 
@@ -90,9 +92,9 @@ const Partners = () => {
                 <div className="card animate-fade-in glass" style={{ marginBottom: '2rem', borderTop: '2px solid var(--accent-base)' }}>
                     {newKey ? (
                         <div style={{ textAlign: 'center', padding: '1rem' }}>
-                            <h3 style={{ color: 'var(--accent-base)' }}>Partner Created Successfully!</h3>
+                            <h3 style={{ color: 'var(--accent-base)' }}>{t('partners.createdSuccess')}</h3>
                             <p style={{ marginTop: '0.5rem', marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
-                                Please copy this API key now. You will not be able to see it again.
+                                {t('partners.copyMsg')}
                             </p>
                             <div style={{
                                 background: 'rgba(0,0,0,0.5)',
@@ -111,27 +113,27 @@ const Partners = () => {
                                 style={{ marginTop: '2rem' }}
                                 onClick={() => { setShowCreateForm(false); setNewKey(null); }}
                             >
-                                Done
+                                {t('common.done')}
                             </button>
                         </div>
                     ) : (
                         <form onSubmit={handleCreatePartner}>
-                            <h3 style={{ marginBottom: '1.5rem' }}>Issue New API Key</h3>
+                            <h3 style={{ marginBottom: '1.5rem' }}>{t('partners.issueNew')}</h3>
                             <div className="input-group">
-                                <label className="input-label">Partner Organization Name</label>
+                                <label className="input-label">{t('partners.orgName')}</label>
                                 <input
                                     type="text"
                                     className="input-field"
                                     value={newPartnerName}
                                     onChange={(e) => setNewPartnerName(e.target.value)}
-                                    placeholder="e.g. Acme E-Commerce"
+                                    placeholder={t('partners.orgNamePlaceholder')}
                                     required
                                     autoFocus
                                 />
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
                                 <button type="submit" className="btn btn-primary" disabled={creating}>
-                                    {creating ? 'Generating...' : 'Generate Key'}
+                                    {creating ? t('partners.generating') : t('partners.generateKey')}
                                 </button>
                             </div>
                         </form>
@@ -143,17 +145,17 @@ const Partners = () => {
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead style={{ background: 'var(--bg-surface)' }}>
                         <tr>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>Name</th>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>API Key (Prefix)</th>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>Status</th>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem', textAlign: 'right' }}>Actions</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('partners.table.name')}</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('partners.table.apiKey')}</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('partners.table.status')}</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem', textAlign: 'right' }}>{t('partners.table.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {partners.length === 0 ? (
                             <tr>
                                 <td colSpan="4" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                    No partners configured.
+                                    {t('partners.noPartners')}
                                 </td>
                             </tr>
                         ) : (
@@ -172,14 +174,14 @@ const Partners = () => {
                                                     <button
                                                         onClick={() => toggleVisibility(partner.id)}
                                                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--text-secondary)', fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}
-                                                        title={visibleKeys[partner.id] ? 'Hide' : 'Show'}
+                                                        title={visibleKeys[partner.id] ? t('common.hide') : t('common.show')}
                                                     >
                                                         {visibleKeys[partner.id] ? '🙈' : '👁️'}
                                                     </button>
                                                     <button
                                                         onClick={() => copyToClipboard(partner.apiKey)}
                                                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--text-secondary)', fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}
-                                                        title="Copy"
+                                                        title={t('common.copy')}
                                                     >
                                                         📋
                                                     </button>
@@ -189,9 +191,9 @@ const Partners = () => {
                                     </td>
                                     <td style={{ padding: '1rem' }}>
                                         {partner.isActive ? (
-                                            <span className="badge badge-success">Active</span>
+                                            <span className="badge badge-success">{t('partners.active')}</span>
                                         ) : (
-                                            <span className="badge badge-error">Terminated</span>
+                                            <span className="badge badge-error">{t('partners.terminated')}</span>
                                         )}
                                     </td>
                                     <td style={{ padding: '1rem', textAlign: 'right' }}>
@@ -201,7 +203,7 @@ const Partners = () => {
                                                 style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem', borderColor: 'rgba(255, 23, 68, 0.3)', color: '#FF8A80' }}
                                                 onClick={() => handleTerminate(partner.id)}
                                             >
-                                                Revoke Access
+                                                {t('partners.revokeAccess')}
                                             </button>
                                         )}
                                     </td>

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useTranslation } from 'react-i18next';
 
 const NewApplication = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [loanTypes, setLoanTypes] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -195,7 +197,7 @@ const NewApplication = () => {
             });
 
             // Application is now auto-progressed straight to MANUAL_REVIEW. Redirect.
-            navigate(`/applications/${applicationRes.data.id}`);
+            navigate(`/${i18n.language}/applications/${applicationRes.data.id}`);
         } catch (error) {
             console.error('Failed to run origination logic:', error);
             const backendError = error.response?.data?.error;
@@ -209,8 +211,8 @@ const NewApplication = () => {
         <div className="animate-fade-in">
             <div className="flex-row justify-between" style={{ marginBottom: '2rem' }}>
                 <div>
-                    <h1>New Loan Application</h1>
-                    <p>Start a new origination process and verify identity.</p>
+                    <h1>{t('newApplication.title')}</h1>
+                    <p>{t('newApplication.subtitle')}</p>
                 </div>
             </div>
 
@@ -231,13 +233,13 @@ const NewApplication = () => {
                 {/* ID LOOKUP SECTION */}
                 <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                     <h3 style={{ marginBottom: '1rem', color: 'var(--accent-base)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        Step 1: Ekeng Identity Lookup
-                        {identityVerified && <span style={{ color: '#00E676', fontSize: '1rem' }}>✓ Verified</span>}
+                        {t('newApplication.step1')}
+                        {identityVerified && <span style={{ color: '#00E676', fontSize: '1rem' }}>{t('newApplication.verified')}</span>}
                     </h3>
 
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
                         <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
-                            <label className="input-label">Enter Applicant SSN or Passport ID</label>
+                            <label className="input-label">{t('newApplication.enterSsnOrPassport')}</label>
                             <input
                                 type="text"
                                 className="input-field"
@@ -253,7 +255,7 @@ const NewApplication = () => {
                             onClick={handleLookup}
                             disabled={fetchingIdentity || !lookupQuery || identityVerified}
                         >
-                            {fetchingIdentity ? 'Querying Ekeng...' : identityVerified ? 'Data Locked' : 'Fetch Identity'}
+                            {fetchingIdentity ? t('newApplication.querying') : identityVerified ? t('newApplication.dataLocked') : t('newApplication.fetchIdentity')}
                         </button>
                         {identityVerified && (
                             <button
@@ -261,7 +263,7 @@ const NewApplication = () => {
                                 className="btn btn-secondary"
                                 onClick={() => { setIdentityVerified(false); setLookupQuery(''); }}
                             >
-                                Reset
+                                {t('newApplication.reset')}
                             </button>
                         )}
                     </div>
@@ -269,30 +271,30 @@ const NewApplication = () => {
                     {/* Pre-fill display if verified */}
                     {identityVerified && (
                         <div className="animate-fade-in" style={{ marginTop: '1.5rem', background: 'var(--bg-primary)', padding: '1rem', borderRadius: '6px', borderLeft: '4px solid #00E676' }}>
-                            <h4 style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Official Ekeng Identity Data</h4>
+                            <h4 style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('newApplication.officialData')}</h4>
 
                             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
                                 <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
-                                    <label className="input-label">First Name</label>
+                                    <label className="input-label">{t('newApplication.firstName')}</label>
                                     <input type="text" className="input-field" value={formData.firstName} disabled style={{ background: 'transparent' }} />
                                 </div>
                                 <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
-                                    <label className="input-label">Last Name</label>
+                                    <label className="input-label">{t('newApplication.lastName')}</label>
                                     <input type="text" className="input-field" value={formData.lastName} disabled style={{ background: 'transparent' }} />
                                 </div>
                                 <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
-                                    <label className="input-label">Citizenship</label>
+                                    <label className="input-label">{t('newApplication.citizenship')}</label>
                                     <input type="text" className="input-field" value={formData.citizenship || 'ARM'} disabled style={{ background: 'transparent' }} />
                                 </div>
                             </div>
 
                             <div style={{ display: 'flex', gap: '1rem' }}>
                                 <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
-                                    <label className="input-label">Date of Birth</label>
+                                    <label className="input-label">{t('newApplication.dob')}</label>
                                     <input type="text" className="input-field" value={formData.birthDate ? formData.birthDate.substring(0, 10) : ''} disabled style={{ background: 'transparent' }} />
                                 </div>
                                 <div className="input-group" style={{ flex: 2, marginBottom: 0 }}>
-                                    <label className="input-label">Registered Address</label>
+                                    <label className="input-label">{t('newApplication.registeredAddress')}</label>
                                     <input type="text" className="input-field" value={formData.address} disabled style={{ background: 'transparent' }} />
                                 </div>
                             </div>
@@ -302,7 +304,7 @@ const NewApplication = () => {
 
                 {/* MAIN APPLICATION FORM */}
                 <form onSubmit={handleSubmit} style={{ opacity: identityVerified ? 1 : 0.5, pointerEvents: identityVerified ? 'auto' : 'none' }}>
-                    <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent-base)' }}>Step 2: Contact Details & Validation</h3>
+                    <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent-base)' }}>{t('newApplication.step2')}</h3>
 
                     {/* Factual Address */}
                     <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(0,0,0,0.1)', borderRadius: '8px' }}>
@@ -313,12 +315,12 @@ const NewApplication = () => {
                                 checked={formData.factualAddressIsSame}
                                 onChange={handleChange}
                             />
-                            <strong>Factual Address is the same as Registered Address</strong>
+                            <strong>{t('newApplication.sameAddress')}</strong>
                         </label>
 
                         {!formData.factualAddressIsSame && (
                             <div className="input-group animate-fade-in" style={{ marginBottom: 0 }}>
-                                <label className="input-label">Enter Factual Address</label>
+                                <label className="input-label">{t('newApplication.factualAddress')}</label>
                                 <input
                                     type="text"
                                     className="input-field"
@@ -337,7 +339,7 @@ const NewApplication = () => {
                         {/* Phone Row */}
                         <div style={{ padding: '1rem', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
                             <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
-                                <label className="input-label">Contact Phone Number</label>
+                                <label className="input-label">{t('newApplication.phone')}</label>
                                 <input
                                     type="text"
                                     className="input-field"
@@ -354,31 +356,31 @@ const NewApplication = () => {
                                 <div style={{ display: 'flex', gap: '0.5rem', flex: 1 }}>
                                     {!phoneOtp.sent ? (
                                         <button type="button" className="btn btn-secondary" onClick={() => handleSendOtp('phone')} style={{ width: '100%' }}>
-                                            Send OTP
+                                            {t('newApplication.sendOtp')}
                                         </button>
                                     ) : (
                                         <>
                                             <input
                                                 type="text"
                                                 className="input-field animate-fade-in"
-                                                placeholder="4-digit code"
+                                                placeholder={t('newApplication.placeholder4digit')}
                                                 maxLength="4"
                                                 value={phoneOtp.code}
                                                 onChange={(e) => setPhoneOtp({ ...phoneOtp, code: e.target.value })}
                                                 style={{ flex: 1, marginBottom: 0 }}
                                             />
                                             <button type="button" className="btn btn-primary animate-fade-in" onClick={() => handleVerifyOtp('phone')}>
-                                                Verify
+                                                {t('newApplication.verify')}
                                             </button>
                                             <button type="button" className="btn btn-secondary animate-fade-in" onClick={() => setPhoneOtp({ ...phoneOtp, sent: false, code: '' })}>
-                                                Cancel
+                                                {t('common.cancel')}
                                             </button>
                                         </>
                                     )}
                                 </div>
                             ) : (
                                 <div style={{ flex: 1, color: '#00E676', fontWeight: 500, display: 'flex', alignItems: 'center' }}>
-                                    ✓ Phone Verified
+                                    {t('newApplication.phoneVerified')}
                                 </div>
                             )}
                         </div>
@@ -386,7 +388,7 @@ const NewApplication = () => {
                         {/* Email Row */}
                         <div style={{ padding: '1rem', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
                             <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
-                                <label className="input-label">Email Address</label>
+                                <label className="input-label">{t('newApplication.email')}</label>
                                 <input
                                     type="email"
                                     className="input-field"
@@ -403,39 +405,39 @@ const NewApplication = () => {
                                 <div style={{ display: 'flex', gap: '0.5rem', flex: 1 }}>
                                     {!emailOtp.sent ? (
                                         <button type="button" className="btn btn-secondary" onClick={() => handleSendOtp('email')} style={{ width: '100%' }}>
-                                            Send OTP
+                                            {t('newApplication.sendOtp')}
                                         </button>
                                     ) : (
                                         <>
                                             <input
                                                 type="text"
                                                 className="input-field animate-fade-in"
-                                                placeholder="4-digit code"
+                                                placeholder={t('newApplication.placeholder4digit')}
                                                 maxLength="4"
                                                 value={emailOtp.code}
                                                 onChange={(e) => setEmailOtp({ ...emailOtp, code: e.target.value })}
                                                 style={{ flex: 1, marginBottom: 0 }}
                                             />
                                             <button type="button" className="btn btn-primary animate-fade-in" onClick={() => handleVerifyOtp('email')}>
-                                                Verify
+                                                {t('newApplication.verify')}
                                             </button>
                                             <button type="button" className="btn btn-secondary animate-fade-in" onClick={() => setEmailOtp({ ...emailOtp, sent: false, code: '' })}>
-                                                Cancel
+                                                {t('common.cancel')}
                                             </button>
                                         </>
                                     )}
                                 </div>
                             ) : (
                                 <div style={{ flex: 1, color: '#00E676', fontWeight: 500, display: 'flex', alignItems: 'center' }}>
-                                    ✓ Email Verified
+                                    {t('newApplication.emailVerified')}
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent-base)' }}>Step 3: Loan Details</h3>
+                    <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent-base)' }}>{t('newApplication.step3')}</h3>
                     <div className="input-group" style={{ marginTop: '1.5rem' }}>
-                        <label className="input-label">Select Loan Product</label>
+                        <label className="input-label">{t('newApplication.selectProduct')}</label>
                         <select className="input-field" name="loanTypeId" value={formData.loanTypeId} onChange={handleLoanTypeChange} required>
                             {loanTypes.map(lt => (
                                 <option key={lt.id} value={lt.id}>{lt.name} ({lt.currency})</option>
@@ -447,9 +449,9 @@ const NewApplication = () => {
                         <div style={{ display: 'flex', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
                             <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
                                 <label className="input-label">
-                                    Amount Requested
+                                    {t('newApplication.amountRequested')}
                                     <span style={{ color: 'var(--text-secondary)', fontWeight: 'normal', marginLeft: '0.4rem' }}>
-                                        (Min: {selectedLoanType.minAmount.toLocaleString()})
+                                        ({t('newApplication.min')}: {selectedLoanType.minAmount.toLocaleString()})
                                     </span>
                                 </label>
                                 <input
@@ -465,9 +467,9 @@ const NewApplication = () => {
                             </div>
                             <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
                                 <label className="input-label">
-                                    Tenure (Months)
+                                    {t('newApplication.tenure')}
                                     <span style={{ color: 'var(--text-secondary)', fontWeight: 'normal', marginLeft: '0.4rem' }}>
-                                        (Max: {selectedLoanType.maxTenure})
+                                        ({t('newApplication.max')}: {selectedLoanType.maxTenure})
                                     </span>
                                 </label>
                                 <input
@@ -485,9 +487,9 @@ const NewApplication = () => {
                     )}
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
-                        <button type="button" className="btn btn-secondary" onClick={() => navigate('/applications')}>Cancel</button>
+                        <button type="button" className="btn btn-secondary" onClick={() => navigate(`/${i18n.language}/applications`)}>{t('common.cancel')}</button>
                         <button type="submit" className="btn btn-primary" disabled={loading || !identityVerified || !phoneOtp.verified || !emailOtp.verified}>
-                            {loading ? 'Running Auto-Progression Pipeline...' : 'Create Application & Auto-Underwrite'}
+                            {loading ? t('newApplication.creatingBtn') : t('newApplication.createBtn')}
                         </button>
                     </div>
                 </form>

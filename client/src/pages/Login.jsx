@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext';
 
 const Login = () => {
@@ -11,8 +12,9 @@ const Login = () => {
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
     const location = useLocation();
+    const { t, i18n } = useTranslation();
 
-    const from = location.state?.from?.pathname || '/applications';
+    const from = location.state?.from?.pathname || `/${i18n.language}/applications`;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -23,7 +25,7 @@ const Login = () => {
             await login(email, password);
             navigate(from, { replace: true });
         } catch (err) {
-            setError(err.message || 'Login failed');
+            setError(err.message || t('login.error'));
         } finally {
             setLoading(false);
         }
@@ -49,8 +51,8 @@ const Login = () => {
                     }}>
                         V
                     </div>
-                    <h2>Welcome back</h2>
-                    <p style={{ marginTop: '0.25rem' }}>Sign in to VistOS Platform</p>
+                    <h2>{t('login.welcome')}</h2>
+                    <p style={{ marginTop: '0.25rem' }}>{t('login.subtitle')}</p>
                 </div>
 
                 {error && (
@@ -61,7 +63,7 @@ const Login = () => {
 
                 <form onSubmit={handleSubmit}>
                     <div className="input-group">
-                        <label className="input-label" htmlFor="email">Email Address</label>
+                        <label className="input-label" htmlFor="email">{t('login.email')}</label>
                         <input
                             type="email"
                             id="email"
@@ -73,7 +75,7 @@ const Login = () => {
                     </div>
 
                     <div className="input-group">
-                        <label className="input-label" htmlFor="password">Password</label>
+                        <label className="input-label" htmlFor="password">{t('login.password')}</label>
                         <input
                             type="password"
                             id="password"
@@ -90,7 +92,7 @@ const Login = () => {
                         style={{ width: '100%', marginTop: '1rem' }}
                         disabled={loading}
                     >
-                        {loading ? <div className="spinner"></div> : 'Sign In'}
+                        {loading ? <div className="spinner"></div> : t('login.submit')}
                     </button>
                 </form>
             </div>

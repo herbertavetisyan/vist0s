@@ -1,37 +1,40 @@
 import React, { useContext } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const NAV_ITEMS = {
     origination: [
-        { to: '/applications', label: 'Applications', icon: '📋' },
-        { to: '/applicants', label: 'Applicants', icon: '👤' },
+        { to: '/applications', label: 'sidebar.applications', icon: '📋' },
+        { to: '/applicants', label: 'sidebar.applicants', icon: '👤' },
     ],
     system: [
-        { to: '/partners', label: 'Partners', icon: '🤝' },
-        { to: '/loan-types', label: 'Loan Types', icon: '⚙️' },
-        { to: '/settings', label: 'DMS Integration', icon: '🔌' },
-        { to: '/logs', label: 'System Logs', icon: '📜' },
+        { to: '/partners', label: 'sidebar.partners', icon: '🤝' },
+        { to: '/loan-types', label: 'sidebar.loanTypes', icon: '⚙️' },
+        { to: '/settings', label: 'sidebar.dmsIntegration', icon: '🔌' },
+        { to: '/logs', label: 'sidebar.systemLogs', icon: '📜' },
     ]
 };
 
-const NavItem = ({ to, label, icon }) => (
+const NavItem = ({ to, label, icon, locale, t }) => (
     <NavLink
-        to={to}
+        to={`/${locale}${to}`}
         className={({ isActive }) => isActive ? 'sidebar-link active' : 'sidebar-link'}
     >
         <span className="sidebar-icon">{icon}</span>
-        {label}
+        {t(label)}
     </NavLink>
 );
 
 const Sidebar = () => {
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate(`/${i18n.language}/login`);
     };
 
     return (
@@ -115,12 +118,16 @@ const Sidebar = () => {
 
                 {/* Navigation */}
                 <nav style={{ flex: 1 }}>
-                    <div className="sidebar-section-label">Origination</div>
-                    {NAV_ITEMS.origination.map(item => <NavItem key={item.to} {...item} />)}
+                    <div className="sidebar-section-label">{t('sidebar.origination')}</div>
+                    {NAV_ITEMS.origination.map(item => <NavItem key={item.to} locale={i18n.language} t={t} {...item} />)}
 
-                    <div className="sidebar-section-label">System</div>
-                    {NAV_ITEMS.system.map(item => <NavItem key={item.to} {...item} />)}
+                    <div className="sidebar-section-label">{t('sidebar.system')}</div>
+                    {NAV_ITEMS.system.map(item => <NavItem key={item.to} locale={i18n.language} t={t} {...item} />)}
                 </nav>
+
+                <div style={{ marginBottom: '1rem', padding: '0 0.5rem' }}>
+                    <LanguageSwitcher />
+                </div>
 
                 {/* User / Logout */}
                 <div style={{
@@ -141,7 +148,7 @@ const Sidebar = () => {
                         className="btn btn-secondary"
                         style={{ width: '100%', fontSize: '0.85rem', padding: '0.5rem 1rem' }}
                     >
-                        Sign Out
+                        {t('sidebar.signOut')}
                     </button>
                 </div>
             </aside>

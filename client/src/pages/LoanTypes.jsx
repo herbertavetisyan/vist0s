@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useTranslation } from 'react-i18next';
 
 const ALL_APPLICANT_TYPES = ['PERSON', 'LEGAL_ENTITY', 'IE'];
 const ALL_ROLES = ['APPLICANT', 'CO_APPLICANT', 'GUARANTOR', 'PLEDGER'];
@@ -12,6 +13,7 @@ const ALL_STAGES = [
 const DEFAULT_STAGES = ALL_STAGES.map(s => ({ name: s, required: s !== 'MANUAL_REVIEW' }));
 
 const LoanTypes = () => {
+    const { t } = useTranslation();
     const [loanTypes, setLoanTypes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -173,34 +175,34 @@ const LoanTypes = () => {
         } catch (error) {
             console.error('Failed to save loan type', error);
             const backendError = error.response?.data?.error;
-            setErrorMsg(backendError || 'Failed to save loan type. Please check your inputs.');
+            setErrorMsg(backendError || t('loanTypes.saveError'));
         } finally {
             setSubmitting(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this Loan Product? This cannot be undone.')) return;
+        if (!window.confirm(t('loanTypes.confirmDelete'))) return;
         try {
             await api.delete(`/loan-types/${id}`);
             setLoanTypes(loanTypes.filter(lt => lt.id !== id));
         } catch (error) {
             console.error('Failed to delete loan type', error);
-            alert(error.response?.data?.error || 'Failed to delete loan type. It might be linked to existing applications.');
+            alert(error.response?.data?.error || t('loanTypes.deleteError'));
         }
     };
 
-    if (loading) return <div className="flex-row gap-2"><div className="spinner"></div> Loading Products...</div>;
+    if (loading) return <div className="flex-row gap-2"><div className="spinner"></div> {t('common.loading')}</div>;
 
     return (
         <div className="animate-fade-in">
             <div className="flex-row justify-between" style={{ marginBottom: '2rem' }}>
                 <div>
-                    <h1>Loan Configurations</h1>
-                    <p>Manage products, rules, stages, and requirements.</p>
+                    <h1>{t('loanTypes.title')}</h1>
+                    <p>{t('loanTypes.subtitle')}</p>
                 </div>
                 <button className="btn btn-primary" onClick={showForm ? () => setShowForm(false) : openCreateForm}>
-                    {showForm ? 'Cancel' : '+ New Product'}
+                    {showForm ? t('common.cancel') : t('loanTypes.newBtn')}
                 </button>
             </div>
 
@@ -220,20 +222,20 @@ const LoanTypes = () => {
                     )}
                     <form onSubmit={handleSubmit}>
                         <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent-base)' }}>
-                            {editingId ? 'Edit Loan Product' : 'Create New Loan Product'}
+                            {editingId ? t('loanTypes.editTitle') : t('loanTypes.createTitle')}
                         </h3>
 
                         <div style={{ display: 'flex', gap: '1rem' }}>
                             <div className="input-group" style={{ flex: 2 }}>
-                                <label className="input-label">Product Name</label>
-                                <input type="text" className="input-field" name="name" value={formData.name} onChange={handleChange} placeholder="e.g. Premium Auto Loan" required autoFocus />
+                                <label className="input-label">{t('loanTypes.productName')}</label>
+                                <input type="text" className="input-field" name="name" value={formData.name} onChange={handleChange} placeholder={t('loanTypes.namePlaceholder')} required autoFocus />
                             </div>
                             <div className="input-group" style={{ flex: 1 }}>
-                                <label className="input-label">Product ID</label>
-                                <input type="text" className="input-field" name="productId" value={formData.productId} onChange={handleChange} placeholder="e.g. 001" required />
+                                <label className="input-label">{t('loanTypes.productId')}</label>
+                                <input type="text" className="input-field" name="productId" value={formData.productId} onChange={handleChange} placeholder={t('loanTypes.idPlaceholder')} required />
                             </div>
                             <div className="input-group" style={{ flex: 1 }}>
-                                <label className="input-label">Currency</label>
+                                <label className="input-label">{t('loanTypes.currency')}</label>
                                 <select className="input-field" name="currency" value={formData.currency} onChange={handleChange}>
                                     <option value="AMD">AMD</option>
                                     <option value="USD">USD</option>
@@ -252,28 +254,28 @@ const LoanTypes = () => {
                                     onChange={(e) => setFormData({ ...formData, isPartnerOriginated: e.target.checked })}
                                     style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--accent-base)' }}
                                 />
-                                Is Partner API Originated?
+                                {t('loanTypes.isPartnerOriginated')}
                             </label>
                             <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#666', marginLeft: '2rem' }}>
-                                If checked, this loan type is reserved exclusively for external applications generated via the Partner Integrations API. It will not require manual SSN input on creation.
+                                {t('loanTypes.partnerHelper')}
                             </p>
                         </div>
 
                         <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
                             <div className="input-group" style={{ flex: 1 }}>
-                                <label className="input-label">Minimum Amount</label>
+                                <label className="input-label">{t('loanTypes.minAmount')}</label>
                                 <input type="number" className="input-field" name="minAmount" value={formData.minAmount} onChange={handleChange} min="0" required />
                             </div>
                             <div className="input-group" style={{ flex: 1 }}>
-                                <label className="input-label">Maximum Amount</label>
+                                <label className="input-label">{t('loanTypes.maxAmount')}</label>
                                 <input type="number" className="input-field" name="maxAmount" value={formData.maxAmount} onChange={handleChange} min="0" required />
                             </div>
                             <div className="input-group" style={{ flex: 1 }}>
-                                <label className="input-label">Min Tenure (Mo)</label>
+                                <label className="input-label">{t('loanTypes.minTenure')}</label>
                                 <input type="number" className="input-field" name="minTenure" value={formData.minTenure} onChange={handleChange} min="1" required />
                             </div>
                             <div className="input-group" style={{ flex: 1 }}>
-                                <label className="input-label">Max Tenure (Mo)</label>
+                                <label className="input-label">{t('loanTypes.maxTenure')}</label>
                                 <input type="number" className="input-field" name="maxTenure" value={formData.maxTenure} onChange={handleChange} min="1" required />
                             </div>
                         </div>
@@ -282,7 +284,7 @@ const LoanTypes = () => {
 
                         <div style={{ display: 'flex', gap: '2rem' }}>
                             <div style={{ flex: 1 }}>
-                                <h4 style={{ marginBottom: '0.5rem' }}>Allowed Applicant Types</h4>
+                                <h4 style={{ marginBottom: '0.5rem' }}>{t('loanTypes.allowedApplicantTypes')}</h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     {ALL_APPLICANT_TYPES.map(type => (
                                         <label key={type} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
@@ -298,7 +300,7 @@ const LoanTypes = () => {
                                 </div>
                             </div>
                             <div style={{ flex: 1 }}>
-                                <h4 style={{ marginBottom: '0.5rem' }}>Allowed Roles</h4>
+                                <h4 style={{ marginBottom: '0.5rem' }}>{t('loanTypes.allowedRoles')}</h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     {ALL_ROLES.map(role => (
                                         <label key={role} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
@@ -319,27 +321,27 @@ const LoanTypes = () => {
 
                         <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                <h4>Required Documents</h4>
+                                <h4>{t('loanTypes.requiredDocuments')}</h4>
                                 <button type="button" className="btn btn-secondary" style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }} onClick={addDocument}>
-                                    + Add Document
+                                    {t('loanTypes.addDocument')}
                                 </button>
                             </div>
 
                             {formData.requiredDocuments.length === 0 ? (
-                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>No documents explicitly required.</p>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t('loanTypes.noDocuments')}</p>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                     {formData.requiredDocuments.map((doc, idx) => (
                                         <div key={doc.id || idx} style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
                                             <div className="input-group" style={{ marginBottom: 0, flex: 2 }}>
-                                                <input type="text" className="input-field" placeholder="Document Name" value={doc.name} onChange={(e) => updateDocument(idx, 'name', e.target.value)} required />
+                                                <input type="text" className="input-field" placeholder={t('loanTypes.docNamePlaceholder')} value={doc.name} onChange={(e) => updateDocument(idx, 'name', e.target.value)} required />
                                             </div>
                                             <div className="input-group" style={{ marginBottom: 0, flex: 3 }}>
-                                                <input type="text" className="input-field" placeholder="Description" value={doc.description} onChange={(e) => updateDocument(idx, 'description', e.target.value)} />
+                                                <input type="text" className="input-field" placeholder={t('loanTypes.docDescPlaceholder')} value={doc.description} onChange={(e) => updateDocument(idx, 'description', e.target.value)} />
                                             </div>
                                             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                                                 <input type="checkbox" checked={doc.required} onChange={(e) => updateDocument(idx, 'required', e.target.checked)} />
-                                                Mandatory
+                                                {t('common.mandatory')}
                                             </label>
                                             <button type="button" className="btn btn-secondary" style={{ color: '#FF8A80', borderColor: 'transparent', padding: '0.5rem' }} onClick={() => removeDocument(idx)}>
                                                 ✕
@@ -353,7 +355,7 @@ const LoanTypes = () => {
                         <hr style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: '1.5rem 0' }} />
 
                         <div>
-                            <h4 style={{ marginBottom: '1rem' }}>Loan Lifecycle Stages (Dynamic)</h4>
+                            <h4 style={{ marginBottom: '1rem' }}>{t('loanTypes.stageLifecycle')}</h4>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 {formData.stagesConfig.map(stage => (
                                     <label key={stage.name} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'var(--bg-card)', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', border: stage.required ? '1px solid var(--accent-base)' : '1px solid transparent' }}>
@@ -370,7 +372,7 @@ const LoanTypes = () => {
 
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
                             <button type="submit" className="btn btn-primary" disabled={submitting}>
-                                {submitting ? 'Saving...' : 'Save Product Configuration'}
+                                {submitting ? t('loanTypes.saving') : t('loanTypes.saveConfig')}
                             </button>
                         </div>
                     </form>
@@ -381,17 +383,17 @@ const LoanTypes = () => {
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead style={{ background: 'var(--bg-surface)' }}>
                         <tr>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>Name (ID)</th>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>Limits</th>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>Docs Req.</th>
-                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem', textAlign: 'right' }}>Actions</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('loanTypes.table.nameId')}</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('loanTypes.table.limits')}</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('loanTypes.table.docsReq')}</th>
+                            <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem', textAlign: 'right' }}>{t('loanTypes.table.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loanTypes.length === 0 ? (
                             <tr>
                                 <td colSpan="4" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                    No loan products configured.
+                                    {t('loanTypes.noProducts')}
                                 </td>
                             </tr>
                         ) : (
@@ -405,10 +407,10 @@ const LoanTypes = () => {
                                     </td>
                                     <td style={{ padding: '1rem', fontSize: '0.9rem' }}>
                                         <div>{lt.minAmount.toLocaleString()} - {lt.maxAmount.toLocaleString()}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Tenure: {lt.minTenure}-{lt.maxTenure} mo</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('loanTypes.tenure')}: {lt.minTenure}-{lt.maxTenure} {t('loanTypes.monthsAbbr')}</div>
                                     </td>
                                     <td style={{ padding: '1rem', fontSize: '0.9rem' }}>
-                                        {(lt.requiredDocuments || []).length} items
+                                        {(lt.requiredDocuments || []).length} {t('loanTypes.items')}
                                     </td>
                                     <td style={{ padding: '1rem', textAlign: 'right' }}>
                                         <button
@@ -416,14 +418,14 @@ const LoanTypes = () => {
                                             style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem', marginRight: '0.5rem' }}
                                             onClick={() => openEditForm(lt)}
                                         >
-                                            Edit Full Config
+                                            {t('loanTypes.editFullConfig')}
                                         </button>
                                         <button
                                             className="btn btn-secondary"
                                             style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem', borderColor: 'rgba(255, 23, 68, 0.3)', color: '#FF8A80' }}
                                             onClick={() => handleDelete(lt.id)}
                                         >
-                                            Delete
+                                            {t('loanTypes.delete')}
                                         </button>
                                     </td>
                                 </tr>
