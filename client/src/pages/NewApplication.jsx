@@ -208,7 +208,7 @@ const NewApplication = () => {
     };
 
     return (
-        <div className="animate-fade-in">
+        <div>
             <div className="flex-row justify-between" style={{ marginBottom: '2rem' }}>
                 <div>
                     <h1>{t('newApplication.title')}</h1>
@@ -216,7 +216,7 @@ const NewApplication = () => {
                 </div>
             </div>
 
-            <div className="card" style={{ maxWidth: '750px', margin: '0 auto' }}>
+            <div className="glass-card" style={{ maxWidth: '750px', margin: '0 auto' }}>
                 {errorMsg && (
                     <div style={{
                         padding: '1rem',
@@ -231,7 +231,7 @@ const NewApplication = () => {
                 )}
 
                 {/* ID LOOKUP SECTION */}
-                <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                <div className="glass-card" style={{ marginBottom: '2.5rem' }}>
                     <h3 style={{ marginBottom: '1rem', color: 'var(--accent-base)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         {t('newApplication.step1')}
                         {identityVerified && <span style={{ color: '#00E676', fontSize: '1rem' }}>{t('newApplication.verified')}</span>}
@@ -337,7 +337,7 @@ const NewApplication = () => {
                     {/* Phone & Email with OTP */}
                     <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {/* Phone Row */}
-                        <div style={{ padding: '1rem', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
+                        <div style={{ padding: '1.25rem', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
                             <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
                                 <label className="input-label">{t('newApplication.phone')}</label>
                                 <input
@@ -386,7 +386,7 @@ const NewApplication = () => {
                         </div>
 
                         {/* Email Row */}
-                        <div style={{ padding: '1rem', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
+                        <div style={{ padding: '1.25rem', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
                             <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
                                 <label className="input-label">{t('newApplication.email')}</label>
                                 <input

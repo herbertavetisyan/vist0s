@@ -1,5 +1,5 @@
 import express from 'express';
-import { createLoanType, getLoanTypes, updateLoanType, deleteLoanType } from '../controllers/loanTypeController.js';
+import { createLoanType, getLoanTypes, updateLoanType, deleteLoanType, updateScoreConfig } from '../controllers/loanTypeController.js';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware.js';
 
@@ -122,6 +122,7 @@ router.get('/', getLoanTypes);
  *       409:
  *         description: Cannot delete due to existing application relationships
  */
+router.put('/:id/score-config', updateScoreConfig);
 router.put('/:id', updateLoanType);
 router.delete('/:id', deleteLoanType);
 

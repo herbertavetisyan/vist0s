@@ -307,7 +307,7 @@ const ApplicationDetail = () => {
                 {/* Right Column: Stage Processing Actions & History View */}
                 <div style={{ flex: '1 1 300px' }}>
                     <div className="card" style={{ background: 'var(--bg-surface)' }}>
-                        <h3 style={{ marginBottom: '1.5rem' }}>{t(`applicationDetail.stages.${viewedStage}`)} {t('applicationDetail.dataSuffix')}</h3>
+                        <h3 style={{ marginBottom: '1.5rem' }}>{t(`applicationDetail.stages.${viewedStage}`)} {t('applicationDetail.stageData')}</h3>
 
                         {/* ENTITIES VIEW */}
                         {viewedStage === 'ENTITIES' && (

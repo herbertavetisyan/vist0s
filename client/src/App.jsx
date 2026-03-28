@@ -12,6 +12,7 @@ import Partners from './pages/Partners';
 import LoanTypes from './pages/LoanTypes';
 import DmsSettings from './pages/DmsSettings';
 import SystemLogs from './pages/SystemLogs';
+import ScoreConfiguration from './pages/ScoreConfiguration';
 
 const App = () => {
     return (
@@ -43,6 +44,7 @@ const App = () => {
                             {/* Placeholders for the rest of the navigation */}
                             <Route path="applicants" element={<div className="animate-fade-in"><h1>Applicants</h1><p>Applicant Management coming soon...</p></div>} />
                             <Route path="loan-types" element={<LoanTypes />} />
+                            <Route path="score-config" element={<ScoreConfiguration />} />
                             <Route path="settings" element={<DmsSettings />} />
                             <Route path="logs" element={<SystemLogs />} />
                         </Route>

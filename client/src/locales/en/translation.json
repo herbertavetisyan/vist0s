@@ -263,6 +263,37 @@
     "systemLogs": "System Logs",
     "origination": "Origination",
     "system": "System",
-    "signOut": "Sign Out"
+    "signOut": "Sign Out",
+    "scoreConfig": "Score Configuration"
+  },
+  "scoreConfig": {
+    "title": "Score Configuration",
+    "subtitle": "Configure automated score parameters conditionally applied per loan type.",
+    "selectLoanType": "Select Loan Type",
+    "noLoanTypes": "No Loan Types available. Create one first.",
+    "incomeChecks": "Income Checks",
+    "creditChecks": "Credit History Checks",
+    "requireWorkExistence": "Require Work Existence",
+    "minMonthsCurrentWorkplace": "Min. Months in Current Workplace",
+    "minMonthsCurrentEmployer": "Min. Months with Current Employer",
+    "minSalaryAmount": "Minimum Salary Amount (AMD)",
+    "minCreditHistoryLength": "Min. Credit History Length (Months)",
+    "maxOverdueDays12Months": "Max Overdue Days (Last 12 Months)",
+    "maxOverdueDays24Months": "Max Overdue Days (Last 24 Months)",
+    "maxOverdueDays36Months": "Max Overdue Days (Last 36 Months)",
+    "maxDefaultedLoans": "Max Defaulted Loans",
+    "maxOverdueLoanContracts": "Max Overdue Loan Contracts",
+    "maxSumOverdueAmount": "Max Sum of Overdue Amounts (AMD)",
+    "requireCreditHistory": "Require Existence of Credit History",
+    "maxCreditRequests7Days": "Max Credit Requests (Last 7 Days)",
+    "maxCreditRequests30Days": "Max Credit Requests (Last 30 Days)",
+    "saveBtn": "Save Configuration",
+    "saving": "Saving...",
+    "saveSuccess": "Configuration saved successfully!",
+    "saveError": "Failed to save score configuration.",
+    "groupLength": "Credit History Length",
+    "groupState": "Current State (Amount & Number of Loans)",
+    "groupDelays": "Delays",
+    "groupRequests": "Requests"
   }
 }

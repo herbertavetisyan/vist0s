@@ -263,6 +263,37 @@
     "systemLogs": "Համակարգի տեղեկամատյան",
     "origination": "Տրամադրում",
     "system": "Համակարգ",
-    "signOut": "Ելք"
+    "signOut": "Ելք",
+    "scoreConfig": "Սքորինգի Կազմաձևում"
+  },
+  "scoreConfig": {
+    "title": "Սքորինգի Կազմաձևում (Score Config)",
+    "subtitle": "Կազմաձևեք սքորինգի պարամետրերը ըստ վարկատեսակի։",
+    "selectLoanType": "Ընտրեք վարկատեսակը",
+    "noLoanTypes": "Առկա վարկատեսակներ չկան: Ստեղծեք նորը:",
+    "incomeChecks": "Եկամտի Ստուգումներ",
+    "creditChecks": "Վարկային Պատմության Ստուգումներ",
+    "requireWorkExistence": "Պահանջել աշխատանքի առկայություն",
+    "minMonthsCurrentWorkplace": "Նվազագույն ամիսներ ընթացիկ աշխատավայրում",
+    "minMonthsCurrentEmployer": "Նվազագույն ամիսներ ընթացիկ գործատուի մոտ",
+    "minSalaryAmount": "Նվազագույն աշխատավարձի չափ (AMD)",
+    "minCreditHistoryLength": "Վարկային պատմության երկարությունը (Ամիս)",
+    "maxOverdueDays12Months": "Առավելագույն ժամկետանց օրեր (12 ամիս)",
+    "maxOverdueDays24Months": "Առավելագույն ժամկետանց օրեր (24 ամիս)",
+    "maxOverdueDays36Months": "Առավելագույն ժամկետանց օրեր (36 ամիս)",
+    "maxDefaultedLoans": "Առավելագույն դեֆոլտ եղած վարկեր",
+    "maxOverdueLoanContracts": "Առավելագույն ժամկետանց վարկային պայմանագրեր",
+    "maxSumOverdueAmount": "Առավելագույն ժամկետանց գումարի չափ (AMD)",
+    "requireCreditHistory": "Պահանջել վարկային պատմության առկայություն",
+    "maxCreditRequests7Days": "Առավելագույն վարկային հարցումներ (7 օր)",
+    "maxCreditRequests30Days": "Առավելագույն վարկային հարցումներ (30 օր)",
+    "saveBtn": "Պահպանել Կազմաձևումը",
+    "saving": "Պահպանվում է...",
+    "saveSuccess": "Կազմաձևումը պահպանվեց հաջողությամբ:",
+    "saveError": "Չհաջողվեց պահպանել կազմաձևումը",
+    "groupLength": "Վարկային պատմության տևողություն",
+    "groupState": "Ընթացիկ վիճակ (Քանակ և Գումար)",
+    "groupDelays": "Ուշացումներ",
+    "groupRequests": "Հարցումներ"
   }
 }

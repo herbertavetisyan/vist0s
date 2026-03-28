@@ -16,30 +16,7 @@ const prisma = new PrismaClient();
 //  }
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MOCK_STORE = {
-    "_id": "670399fc5793f88ee43c6a68",
-    "name": "VistOS Demo Partner",
-    "description": "(ՀVՀՀ 00000000)",
-    "availableGoods": [
-        {
-            "goodsTypeId": {
-                "_id": "670399515793f88ee43c6a14",
-                "key": "G1",
-                "name": "Կենցաղային և համակարգչային տեխնիկա",
-                "template": "400"
-            },
-            "maximumQuantity": 4,
-            "durations": [12, 24, 36]
-        }
-    ],
-    "logo": "",
-    "address": "ՀՀ, Երևան",
-    "partnerCode": "01",
-    "isActive": true,
-    "manualReview": false,
-    "specialPromos": ""
-};
-
+// Removed MOCK_STORE POS details
 const MOCK_NORK = {
     "s:Envelope": {
         "xmlns:s": "http://schemas.xmlsoap.org/soap/envelope/",
@@ -141,12 +118,7 @@ const buildMainPayload = (applicationRecord, applicantRecord) => {
                     "effectiveAnnualRate": "",
                     "monthlyCommission": "",
                     "duration": applicationRecord.requestedTenure || 24,
-                    "paymentDate": 20,
-                    "goodsTypeName": "Կentzaghain ev hamakargchutyan tekhnika",
-                    "goodsTypeKey": "G1",
-                    "goodsTypeTemplate": "400",
-                    "goodsQuantity": 1,
-                    "goods": []
+                    "paymentDate": 20
                 },
                 "personalInformation": {
                     "SSN": {
@@ -188,16 +160,14 @@ const buildMainPayload = (applicationRecord, applicantRecord) => {
             },
             "ManualOffers": [],
             // nork and acra will be set dynamically below
-            "store": "670399fc5793f88ee43c6a68",
             "step": 5,
             "status": "InProgress",
             "createdAt": now,
             "updatedAt": now,
             "applicationId": 10004,
-            "__v": 0
+            "__v": 0,
+            "metadata": applicationRecord.loanType?.scoreConfig || {}
         },
-        "store": MOCK_STORE,
-        "maxGoodDuration": 36,
         "PrevApps": []
     };
 

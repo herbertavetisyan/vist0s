@@ -15,3 +15,4 @@ When working on this project, you must read and adhere to these rules before wri
 
 ## Project Specific Directives
 - **Supreme Source of Truth**: When determining architectural patterns or the rules of engagement for this project, this file is the definitive guide. Always abide by the rules outlined above.
+- **Debugging Protocol (MANDATORY)**: When asked to debug an issue, the AI MUST stop after analyzing the root cause. It must report the findings and proposed solution, and wait for explicit user approval before executing any file edits or terminal commands.

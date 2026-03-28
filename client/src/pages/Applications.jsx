@@ -84,7 +84,7 @@ const Applications = () => {
     if (loading) return <div className="flex-row gap-2"><div className="spinner"></div> {t('applications.loading')}</div>;
 
     return (
-        <div className="animate-fade-in">
+        <div>
             <div className="flex-row justify-between" style={{ marginBottom: '1.5rem' }}>
                 <div>
                     <h1>{t('applications.title')}</h1>
@@ -96,9 +96,9 @@ const Applications = () => {
             </div>
 
             {/* Filter Bar */}
-            <div style={{
-                display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center',
-                padding: '1rem', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)'
+            <div className="glass-card" style={{
+                display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap', alignItems: 'center',
+                padding: '1.25rem'
             }}>
                 <div style={{ flex: '1 1 220px' }}>
                     <input
@@ -137,9 +137,9 @@ const Applications = () => {
                 </div>
             </div>
 
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead style={{ background: 'var(--bg-surface)' }}>
+                    <thead style={{ background: 'rgba(0,0,0,0.2)' }}>
                         <tr>
                             <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('applications.table.id')}</th>
                             <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('applications.table.applicant')}</th>

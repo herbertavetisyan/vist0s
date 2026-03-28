@@ -195,7 +195,7 @@ const LoanTypes = () => {
     if (loading) return <div className="flex-row gap-2"><div className="spinner"></div> {t('common.loading')}</div>;
 
     return (
-        <div className="animate-fade-in">
+        <div>
             <div className="flex-row justify-between" style={{ marginBottom: '2rem' }}>
                 <div>
                     <h1>{t('loanTypes.title')}</h1>
@@ -207,17 +207,15 @@ const LoanTypes = () => {
             </div>
 
             {showForm && (
-                <div className="card animate-fade-in glass" style={{ marginBottom: '2rem', borderTop: '2px solid var(--accent-base)' }}>
+                <div className="glass-card animate-fade-in" style={{ marginBottom: '2.5rem', borderTop: '2px solid var(--accent-base)' }}>
                     {errorMsg && (
                         <div style={{
-                            padding: '1rem',
+                            padding: '1.25rem',
                             marginBottom: '1.5rem',
-                            background: 'rgba(255, 23, 68, 0.1)',
-                            borderLeft: '4px solid #FF8A80',
-                            color: '#FF8A80',
+                            borderLeft: '4px solid var(--status-error)',
                             borderRadius: '0 4px 4px 0'
                         }}>
-                            <strong>Error:</strong> {errorMsg}
+                            <strong style={{ color: 'var(--status-error)' }}>Error:</strong> {errorMsg}
                         </div>
                     )}
                     <form onSubmit={handleSubmit}>
@@ -379,9 +377,9 @@ const LoanTypes = () => {
                 </div>
             )}
 
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead style={{ background: 'var(--bg-surface)' }}>
+                    <thead style={{ background: 'rgba(0,0,0,0.2)' }}>
                         <tr>
                             <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('loanTypes.table.nameId')}</th>
                             <th style={{ padding: '1rem', borderBottom: 'var(--border-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>{t('loanTypes.table.limits')}</th>
