@@ -116,7 +116,7 @@ const NewApplication = () => {
                 ...prev,
                 firstName: data.firstName,
                 lastName: data.lastName,
-                [isSsn ? 'ssn' : 'passport']: data.documentNumber,
+                [isSsn ? 'ssn' : 'passport']: query,
                 address: data.address || '',
                 factualAddress: data.address || '',
                 birthDate: data.birthDate || '',
