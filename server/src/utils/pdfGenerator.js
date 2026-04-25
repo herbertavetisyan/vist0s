@@ -72,123 +72,130 @@ export const generateLoanContractPdf = async (application) => {
     return await generatePdfBuffer((doc) => {
         const { applicant, finalCalculatedAmount, approvedTenure, assignedRate, serviceFee, bankAccountNumber, repaymentSchedule, scoringData } = application;
         const font = FONT_PATH;
+        
+        const now = new Date();
+        const endDate = new Date(now);
+        endDate.setMonth(endDate.getMonth() + (approvedTenure || 0));
 
-        // Header Title
-        doc.font(font).fontSize(18).text('ՎԱՐԿԱՅԻՆ ՊԱՅՄԱՆԱԳԻՐ', { align: 'center' });
+        const dateStr = now.toLocaleDateString('hy-AM');
+
+        doc.font(font).fontSize(14).text('ՍՊԱՌՈՂԱԿԱՆ ՎԱՐԿԻ ՊԱՅՄԱՆԱԳԻՐ', { align: 'center' });
+        doc.fontSize(10);
+        doc.moveDown(1);
+        doc.text('ք. Երևան', { align: 'left', continued: true }).text(`${dateStr} թ.`, { align: 'right' });
+        doc.moveDown(1.5);
+
+        doc.text(`«X Կրեդիտ» ՈՒՎԿ ՍՊ ընկերությունը (Հասցե՝ ՀՀ, ք․Երևան, Հրաչյա Քոչար 27շ., թիվ 55 ոչ բնակելի տարածք), այսուհետ\` «Վարկատու և/կամ Գրավառու», ի դեմս կազմակերպության գործադիր տնօրեն Նշան Վահանի Մելիքսեթյանի, ով գործում է վարկային կազմակերպության Կանոնադրության հիման վրա, մի կողմից,`);
         doc.moveDown(0.5);
 
-        // Metadata Box
-        doc.rect(40, doc.y, doc.page.width - 80, 40).stroke('#aaaaaa');
-        doc.fontSize(10).text(`Պայմանագրի համարը: L-CONT-${application.id.substring(0, 8).toUpperCase()}`, 50, doc.y + 10);
-        doc.text(`Ամսաթիվ: ${new Date().toLocaleDateString('hy-AM')}`, 50, doc.y + 10, { align: 'right', width: doc.page.width - 100 });
-        doc.moveDown(3);
-
-        // Section 1: Parties
-        doc.fontSize(14).text('1. ԿՈՂՄԵՐԸ', 40, doc.y, { underline: true });
+        const birthDateYear = applicant.birthDate ? new Date(applicant.birthDate).getFullYear() : '________';
+        const issueDateYear = applicant.issueDate ? new Date(applicant.issueDate).getFullYear() : '________';
+        
+        doc.text(`${applicant.firstName} ${applicant.lastName}ը (անձը հաստատող փաստաթուղթ ՝ ${applicant.passport || 'Ն/Ա'}, տրված\` ${issueDateYear} թվականին, ${applicant.issuedBy || '________'}-ի կողմից, ծնված՝ ${birthDateYear} թվականին, հաշվառման հասցե՝ ՀՀ, ${applicant.address || 'Ն/Ա'}), այսուհետ՝ «Վարկառու և/կամ Գնորդ և/կամ Գրավատու», մյուս կողմից,`);
         doc.moveDown(0.5);
-
-        // Custom simple grid mapping
-        const partyStartX = 40;
-        let pY = doc.y;
-
-        doc.fontSize(10).fillColor('#555555').text('Վարկատու:', partyStartX, pY);
-        doc.fillColor('#000000').text(`"ՎիստՕՍ Բանկ" ՓԲԸ`, partyStartX + 120, pY);
-        pY += 18;
-
-        doc.fillColor('#555555').text('Վարկառու:', partyStartX, pY);
-        doc.fillColor('#000000').text(`${applicant.firstName} ${applicant.lastName}`, partyStartX + 120, pY);
-        pY += 18;
-
-        doc.fillColor('#555555').text('Անձնագիր / ՀԾՀ:', partyStartX, pY);
-        doc.fillColor('#000000').text(`${applicant.passport || 'Ն/Ա'} / ${applicant.ssn || 'Ն/Ա'}`, partyStartX + 120, pY);
-        pY += 18;
-
-        doc.fillColor('#555555').text('Հասցե:', partyStartX, pY);
-        doc.fillColor('#000000').text(`${applicant.address || 'Ն/Ա'}`, partyStartX + 120, pY);
-        pY += 18;
-
-        doc.fillColor('#555555').text('Հեռախոսահամար:', partyStartX, pY);
-        doc.fillColor('#000000').text(`${applicant.phone || 'Ն/Ա'}`, partyStartX + 120, pY);
-        pY += 18;
-
-        doc.fillColor('#555555').text('Բանկային հաշիվ:', partyStartX, pY);
-        doc.fillColor('#000000').text(`${bankAccountNumber || 'Ն/Ա'}`, partyStartX + 120, pY);
-
-        doc.y = pY + 30;
-
-        // Section 2: Terms
-        doc.fontSize(14).text('2. ՎԱՐԿԻ ՊԱՅՄԱՆՆԵՐԸ', 40, doc.y, { underline: true });
-        doc.moveDown(0.5);
-
-        doc.rect(40, doc.y, doc.page.width - 80, 120).fillAndStroke('#f9fcff', '#b3d4fc');
-        doc.fillColor('#000000');
-
-        pY = doc.y + 10;
-        doc.fontSize(10).fillColor('#333333').text('Վարկի գումար:', 50, pY);
-        doc.fillColor('#000000').text(`${finalCalculatedAmount?.toLocaleString() || 0} ՀՀԴ`, 200, pY);
-        pY += 18;
-
-        doc.fillColor('#333333').text('Անվանական Տոկոսադրույք:', 50, pY);
-        doc.fillColor('#000000').text(`${assignedRate || 0}%`, 200, pY);
-        pY += 18;
-
-        const effectiveRate = scoringData?.EffectiveAnnualRate || scoringData?.APR || 0;
-        doc.fillColor('#333333').text('Փաստացի Տոկոսադրույք:', 50, pY);
-        doc.fillColor('#000000').text(`${effectiveRate}%`, 200, pY);
-        pY += 18;
-
-        doc.fillColor('#333333').text('Ժամկետ:', 50, pY);
-        doc.fillColor('#000000').text(`${approvedTenure || 0} ամիս`, 200, pY);
-        pY += 18;
-
-        const monthlyPayment = scoringData?.MonthlyPayment || 0;
-        doc.fillColor('#333333').text('Ամսական վճար:', 50, pY);
-        doc.fillColor('#000000').text(`${monthlyPayment?.toLocaleString() || 0} ՀՀԴ`, 200, pY);
-        pY += 18;
-
-        doc.fillColor('#333333').text('Սպասարկման վճար:', 50, pY);
-        doc.fillColor('#000000').text(`${serviceFee ? serviceFee + ' ՀՀԴ' : '0 ՀՀԴ'}`, 200, pY);
-
-        doc.y = pY + 30;
-
-        // Section 3: Schedule
-        doc.fontSize(14).text('3. ՄԱՐՄԱՆ ԺԱՄԱՆԱԿԱՑՈՒՅՑ', 40, doc.y, { underline: true });
+        doc.text(`միասին նաև՝ «Կողմեր», կնքեցին սույն պայմանագիրը (այսուհետ՝ Պայմանագիր) հետևյալի մասին.`);
         doc.moveDown(1);
 
+        doc.fontSize(12).text('1. Պայմանագրի առարկա').fontSize(10).moveDown(0.5);
+        doc.text(`1.1. Վարկատուն պարտավորվում է Վարկառուին տրամադրել սպառողական վարկ՝ (${finalCalculatedAmount?.toLocaleString() || 0} ՀՀ դրամ), իսկ Վարկառուն պարտավորվում է օգտագործել այն սպառողական նպատակներով (չի կարող օգտագործվել ձեռնարկատիրական գործունեության համար) և վերադարձնել Վարկատուին սույն պայմանագրով սահմանված կարգով և ժամկետներում՝ վճարելով տոկոսներ [1.3 կետ]:`);
+        doc.moveDown(0.5);
+        doc.text(`1.2. Պայմանագիրը կնքվում է պարզ գրավոր ձևով: Պայմանագրի գրավոր ձևը չպահպանելու դեպքում այն առոչինչ է (ՀՀ քաղաքացիական օրենսգրքի 1120-րդ հոդված):`);
+        doc.moveDown(0.5);
+        doc.text(`1.3. Վարկի տոկոսադրույքը սահմանվում է ${assignedRate || 0}%:`);
+        doc.text(`(ՀՀ օրենսդրության համաձայն՝ տոկոսադրույքը չի կարող գերազանցել ՀՀ Կենտրոնական բանկի կողմից սահմանված բանկային տոկոսադրույքի կրկնապատիկը: Ընթացիկ տվյալներով՝ այն կազմում է 24%, սակայն խորհուրդ է տրվում ճշտել ընթացիկ ցուցանիշը) .`);
+        doc.moveDown(1);
+
+        doc.fontSize(12).text('2. Վարկի տրամադրման կարգ և ժամկետներ').fontSize(10).moveDown(0.5);
+        doc.text(`2.1. Վարկատուն Վարկառուին վարկը տրամադրում է սույն պայմանագիրը ստորագրելուց հետո՝ 3 (երեք) աշխատանքային օրվա ընթացքում:`);
+        doc.moveDown(0.5);
+        doc.text(`2.2. Վարկը տրամադրվում է հետևյալ եղանակներից մեկով՝ \nԿանխիկ գումարի փոխանցմամբ՝ Վարկառուի ստորագրության դիմաց.\nԱնկանխիկ եղանակով՝ Վարկառուի բանկային հաշվին փոխանցմամբ (հաշվեհամար՝ ${bankAccountNumber || '________________'}):`);
+        doc.moveDown(0.5);
+        doc.text(`2.3. Վարկի տրամադրման օր է համարվում Վարկառուի կողմից գումարի ստացման օրը (կանխիկի դեպքում) կամ Վարկառուի բանկային հաշվին գումարի մուտքագրման օրը (անկանխիկի դեպքում): Այդ պահից պայմանագիրը համարվում է կնքված :`);
+        doc.moveDown(1);
+
+        doc.fontSize(12).text('3. Վարկի վերադարձման կարգ և ժամկետներ').fontSize(10).moveDown(0.5);
+        doc.text(`3.1. Վարկառուն պարտավորվում է վարկը վերադարձնել մինչև «${endDate.getDate()}» ${endDate.getMonth() + 1} 20${String(endDate.getFullYear()).slice(-2)} թ.-ը ներառյալ:`);
+        doc.moveDown(0.5);
+        doc.text(`3.2. Վարկի մարումը կատարվում է հավասարաչափ (անուիտետ) կամ տարբերակված վճարներով՝ համաձայն կից վճարումների գրաֆիկի (Ժամկետ՝ ${approvedTenure || 0} ամիս), որը հանդիսանում է սույն պայմանագրի անբաժանելի մասը:`);
+        doc.moveDown(0.5);
+        doc.text(`3.3. Վճարումները կատարվում են հետևյալ եղանակով՝ \nԿանխիկ վճարում Վարկատուի դրամարկղ.\nԱնկանխիկ փոխանցում Վարկատուի հաշվեհամարին (հաշվեհամար՝ 12345678901234):`);
+        doc.moveDown(0.5);
+        doc.text(`3.4. Վարկը համարվում է մարված Վարկատուի դրամարկղ գումարի մուտքագրման (կանխիկի դեպքում) կամ Վարկատուի բանկային հաշվին գումարի մուտքագրման պահից :`);
+        doc.moveDown(0.5);
+        doc.text(`3.5. Վարկառուն իրավունք ունի վաղաժամկետ մարել վարկը (ամբողջությամբ կամ մասնակի)՝ առանց տույժերի, սակայան պարտավոր է առնվազն 10 աշխատանքային օր առաջ գրավոր ծանուցել Վարկատուին:\n(Տոկոսային վարկի վաղաժամկետ մարումը հնարավոր է միայն Վարկատուի համաձայնությամբ, եթե այլ բան նախատեսված չէ պայմանագրում) :`);
+        doc.moveDown(1);
+
+        doc.fontSize(12).text('4. Տոկոսների և տույժերի հաշվարկ').fontSize(10).moveDown(0.5);
+        doc.text(`4.1. Վարկի օգտագործման համար տոկոսները հաշվարկվում են վարկի փաստացի մնացորդի վրա:`);
+        doc.moveDown(0.5);
+        doc.text(`4.2. Վարկի մարման ժամկետը խախտելու դեպքում Վարկառուն վճարում է տույժ՝ ուշացման յուրաքանչյուր օրվա համար վարկի չմարված մասի 0.13%-ի չափով:`);
+        doc.moveDown(0.5);
+        doc.text(`4.3. Եթե Վարկառուն չի կատարում իր պարտավորությունը, ապա պայմանագրով նախատեսված տոկոսները դադարում են գործել, և կիրառվում է ՀՀ քաղաքացիական օրենսգրքի 411-րդ հոդվածի 1-ին կետով նախատեսված տոկոսը՝ սկսած այն օրվանից, երբ գումարը պետք է վերադարձվեր .`);
+        doc.moveDown(1);
+        
+        doc.addPage();
+
+        doc.fontSize(12).text('5. Կողմերի իրավունքները և պարտականությունները').fontSize(10).moveDown(0.5);
+        doc.text(`5.1. Վարկառուն պարտավոր է`);
+        doc.text(`   5.1.1. Օգտագործել վարկը բացառապես սպառողական նպատակների համար.`);
+        doc.text(`   5.1.2. Վերադարձնել վարկը և վճարել տոկոսները սույն պայմանագրով սահմանված ժամկետներում.`);
+        doc.text(`   5.1.3. Վարկատուի պահանջով տեղեկատվություն տրամադրել իր ֆինանսական վիճակի մասին.`);
+        doc.moveDown(0.5);
+        doc.text(`5.2. Վարկատուն իրավունք ունի`);
+        doc.text(`   5.2.1. Պահանջել վարկի ժամկետից շուտ վերադարձ, եթե Վարկառուն խախտել է վարկի օգտագործման կամ վերադարձման պայմանները:`);
+        doc.text(`   5.2.2. Վարկի գծով առաջացած պարտավորությունները զիջել երրորդ անձանց:`);
+        doc.moveDown(1);
+
+        doc.fontSize(12).text('6. Այլ պայմաններ').fontSize(10).moveDown(0.5);
+        doc.text(`6.1. Վեճերի լուծման կարգ. Կողմերը կփորձեն վեճերը լուծել բանակցությունների միջոցով: Համաձայնության չգալու դեպքում վեճը լուծվում է ՀՀ օրենսդրությամբ սահմանված կարգով՝ հայցային վարույթի միջոցով:`);
+        doc.moveDown(0.5);
+        doc.text(`6.2. Ֆորս-մաժոր. Կողմերն ազատվում են պատասխանատվությունից, եթե պարտավորությունների չկատարումը պայմանավորված է անհաղթահարելի ուժով (բնական աղետներ, ռազմական գործողություններ և այլն):`);
+        doc.moveDown(0.5);
+        doc.text(`6.3. Պայմանագրում կատարված բոլոր փոփոխությունները կատարվում են գրավոր ձևով և ստորագրվում երկու կողմերի կողմից:`);
+        doc.moveDown(0.5);
+        doc.text(`6.4. Պայմանագիրը կազմված է 2 օրինակից՝ յուրաքանչյուր կողմի համար մեկական օրինակ, որոնք ունեն հավասար իրավական ուժ:`);
+        doc.moveDown(2);
+
+        doc.fontSize(12).text('7. Կողմերի ստորագրությունները և տվյալները').fontSize(10).moveDown(0.5);
+        
+        let sigY = doc.y;
+        doc.text('Վարկատու', 40, sigY, { underline: true });
+        doc.text('Անվանումը: «X Կրեդիտ» ՈՒՎԿ ՍՊ', 40, sigY + 15);
+        doc.text('Հասցեն: ք․Երևան, Հրաչյա Քոչար 27շ.', 40, sigY + 30);
+        doc.text('Հեռ./Էլ. փոստ: info@vistos.am', 40, sigY + 45);
+        doc.text('Ստորագրություն: __________________', 40, sigY + 65);
+
+        doc.text('Վարկառու', 300, sigY, { underline: true });
+        doc.text(`Անուն, Ազգանուն: ${applicant.firstName} ${applicant.lastName}`, 300, sigY + 15);
+        doc.text(`Հասցե: ${applicant.address || 'Ն/Ա'}`, 300, sigY + 30);
+        doc.text(`Հեռ./Էլ. փոստ: ${applicant.phone || 'Ն/Ա'} / ${applicant.email || 'Ն/Ա'}`, 300, sigY + 45);
+        doc.text(`Անձը հաստ. փաստաթուղթ: ${applicant.passport || 'Ն/Ա'} / ՀԾՀ: ${applicant.ssn || 'Ն/Ա'}`, 300, sigY + 60);
+        doc.text(`Ստորագրություն: __________________`, 300, sigY + 80);
+
+        doc.y = sigY + 110;
+        doc.moveDown(2);
+
+        // Section 8 (Schedule) -> using the drawTable
+        doc.fontSize(12).text('ՎՃԱՐՈՒՄՆԵՐԻ ԳՐԱՖԻԿ', { align: 'center' });
+        doc.fontSize(10).text('(Կցվում է որպես առանձին աղյուսակ)', { align: 'center'}).moveDown(1);
+        
         if (repaymentSchedule && Array.isArray(repaymentSchedule)) {
-            const headers = ['Ամիս - Ամսաթիվ', 'Ընդհանուր վճարում', 'Մայր գումար', 'Տոկոսագումար', 'Մնացորդ (ՀՀԴ)'];
+            const headers = ['Ամսաթիվ', 'Ընդհանուր վճար', 'Մայր գումարի մաս', 'Տոկոսներ', 'Մնացորդ'];
             const widths = [100, 100, 100, 100, 115];
 
             const tableRows = repaymentSchedule.map(row => [
-                `${row.month}  (${row.paymentDate})`,
+                `${row.paymentDate}`,
                 `${row.paymentAmount.toLocaleString()}`,
                 `${row.principal.toLocaleString()}`,
                 `${row.interest.toLocaleString()}`,
                 `${row.remainingBalance.toLocaleString()}`
             ]);
 
-            doc.y = drawTable(doc, 40, doc.y, headers, tableRows, widths);
+            drawTable(doc, 40, doc.y, headers, tableRows, widths);
         }
-
-        doc.moveDown(3);
-
-        // Page break if signatures don't fit
-        if (doc.y > doc.page.height - 150) {
-            doc.addPage();
-        }
-
-        // Signatures
-        doc.fontSize(14).text('ԿՈՂՄԵՐԻ ՍՏՈՐԱԳՐՈՒԹՅՈՒՆՆԵՐԸ', 40, doc.y, { underline: true });
-        doc.moveDown(1.5);
-
-        const sigY = doc.y;
-        doc.fontSize(10).text('ՎԱՐԿԱՏՈՒ', 40, sigY);
-        doc.text('_____________________________', 40, sigY + 30);
-        doc.text('"ՎիստՕՍ Բանկ" ՓԲԸ լիազոր', 40, sigY + 45);
-
-        doc.text('ՎԱՐԿԱՌՈՒ', 350, sigY, { align: 'right', width: 200 });
-        doc.text('_____________________________', 350, sigY + 30, { align: 'right', width: 200 });
-        doc.text('Էլեկտրոնային ստորագրված է', 350, sigY + 45, { align: 'right', width: 200, color: '#00cc00' });
+        
+        doc.moveDown(1);
+        doc.fontSize(8).text(`Խորհուրդ. Նախքան պայմանագիրը ստորագրելը ուշադիր կարդացեք բոլոր կետերը, հատկապես մանրատառով գրված պայմանները (եթե առկա են), և համոզվեք, որ տոկոսադրույքը չի գերազանցում ՀՀ Կենտրոնական բանկի կողմից սահմանված առավելագույն շեմը :`);
     });
 };
 

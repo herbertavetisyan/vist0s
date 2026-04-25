@@ -4,7 +4,7 @@ import api from '../services/api';
 import { useTranslation } from 'react-i18next';
 
 const NewApplication = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const [loanTypes, setLoanTypes] = useState([]);
     const [loading, setLoading] = useState(false);

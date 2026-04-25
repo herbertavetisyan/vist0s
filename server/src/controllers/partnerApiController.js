@@ -561,18 +561,14 @@ export const submitAccountNumberFromPartner = async (req, res, next) => {
             include: { applicant: true, loanType: true, partner: true }
         });
 
-        // Generate PDFs in memory
-        const { generateLoanContractPdf, generateIndividualPaperPdf } = await import('../utils/pdfGenerator.js');
-
-        const contractPdfBuffer = await generateLoanContractPdf(updated);
-        const individualPdfBuffer = await generateIndividualPaperPdf(updated);
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
 
         res.json({
             message: 'Account number verified via Partner API and contracts generated successfully.',
             applicationId: updated.id,
             documents: {
-                contract: contractPdfBuffer.toString('base64'),
-                individualPaper: individualPdfBuffer.toString('base64')
+                contractUrl: `${baseUrl}/api/applications/${updated.id}/documents/contract`,
+                individualPaperUrl: `${baseUrl}/api/applications/${updated.id}/documents/individual-paper`
             }
         });
 

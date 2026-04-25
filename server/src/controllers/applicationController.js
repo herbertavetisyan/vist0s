@@ -601,18 +601,14 @@ export const submitAccountNumber = async (req, res) => {
             include: { applicant: true, loanType: true, partner: true }
         });
 
-        // Use dynamic PDF generator instead of strict static file responses
-        const { generateLoanContractPdf, generateIndividualPaperPdf } = await import('../utils/pdfGenerator.js');
-
-        const contractPdfBuffer = await generateLoanContractPdf(updated);
-        const individualPdfBuffer = await generateIndividualPaperPdf(updated);
+        // PDFs are now lazily generated upon GET request to the document URLs
 
         res.json({
-            message: 'Account number verified and contracts generated successfully.',
+            message: 'Account number verified and contracts available for download.',
             application: updated,
             documents: {
-                contract: contractPdfBuffer.toString('base64'),
-                individualPaper: individualPdfBuffer.toString('base64')
+                contract: `/api/applications/${id}/documents/contract`,
+                individualPaper: `/api/applications/${id}/documents/individual-paper`
             }
         });
 
@@ -678,27 +674,49 @@ export const verifyOtp = async (req, res) => {
 
 export const downloadLoanContract = async (req, res) => {
     try {
-        const filePath = '/usr/src/app/static/credit_Contract.pdf';
-        if (!fs.existsSync(filePath)) return res.status(404).send('Contract file not found');
+        const { id } = req.params;
+        const application = await prisma.application.findUnique({
+            where: { id },
+            include: { applicant: true, loanType: true, partner: true }
+        });
+
+        if (!application) {
+             return res.status(404).send('Application not found');
+        }
+
+        const { generateLoanContractPdf } = await import('../utils/pdfGenerator.js');
+        const pdfBuffer = await generateLoanContractPdf(application);
+
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'attachment; filename="Loan_Contract.pdf"');
-        fs.createReadStream(filePath).pipe(res);
+        res.setHeader('Content-Disposition', `inline; filename="Loan_Contract_${id.substring(0,6)}.pdf"`);
+        res.send(pdfBuffer);
     } catch (error) {
-        console.error("PDF Serve Error:", error);
-        res.status(500).send('Error serving Loan Contract PDF');
+        console.error("PDF Generate Error:", error);
+        res.status(500).send('Error generating Loan Contract PDF');
     }
 };
 
 export const downloadIndividualPaper = async (req, res) => {
     try {
-        const filePath = '/usr/src/app/static/anhatakan.pdf';
-        if (!fs.existsSync(filePath)) return res.status(404).send('Individual paper file not found');
+        const { id } = req.params;
+        const application = await prisma.application.findUnique({
+            where: { id },
+            include: { applicant: true, loanType: true, partner: true }
+        });
+
+        if (!application) {
+             return res.status(404).send('Application not found');
+        }
+
+        const { generateIndividualPaperPdf } = await import('../utils/pdfGenerator.js');
+        const pdfBuffer = await generateIndividualPaperPdf(application);
+
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'attachment; filename="anhatakan.pdf"');
-        fs.createReadStream(filePath).pipe(res);
+        res.setHeader('Content-Disposition', `inline; filename="Anhatakan_${id.substring(0,6)}.pdf"`);
+        res.send(pdfBuffer);
     } catch (error) {
-        console.error("PDF Serve Error:", error);
-        res.status(500).send('Error serving Individual Paper PDF');
+        console.error("PDF Generate Error:", error);
+        res.status(500).send('Error generating Individual Paper PDF');
     }
 };
 
